@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book Club Vote</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --cream: #faf7f0;
+      --paper: #f3ede0;
+      --brown: #2c1810;
+      --mid-brown: #5c3d2e;
+      --gold: #c9973a;
+      --light-gold: #f0e0b0;
+      --muted-gold: #f8f0dc;
+      --gray: #7a6655;
+      --border: #ddd3c0;
+      --white: #ffffff;
+      --shadow-sm: 0 1px 6px rgba(44,24,16,0.07);
+      --shadow-md: 0 4px 20px rgba(44,24,16,0.11);
+      --shadow-lg: 0 8px 40px rgba(44,24,16,0.17);
+      --book1: #7b4f2e;
+      --book2: #2e5c7b;
+      --book3: #3a6b45;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--cream);
+      color: var(--brown);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--brown);
+      color: var(--light-gold);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .header-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .organizer-badge {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      opacity: 0.55;
+      border: 1px solid rgba(240,224,176,0.3);
+      border-radius: 4px;
+      padding: 0.2rem 0.5rem;
+    }
+
+    .reset-btn {
+      background: transparent;
+      border: 1px solid rgba(240,224,176,0.35);
+      color: var(--light-gold);
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-family: inherit;
+      white-space: nowrap;
+      opacity: 0.65;
+      transition: opacity 0.15s;
+    }
+    .reset-btn:hover { opacity: 1; }
+
+    /* ── Layout ── */
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4rem;
+    }
+
+    /* ── Views ── */
+    .view { display: none; }
+    .view.active { display: block; animation: rise 0.28s ease; }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--white);
+      border-radius: 14px;
+      padding: 2rem;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border);
+    }
+
+    /* ── Typography ── */
+    h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+    }
+
+    .subtitle {
+      color: var(--gray);
+      font-size: 0.93rem;
+      margin-bottom: 2rem;
+      line-height: 1.55;
+    }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 1.25rem; }
+
+    label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--mid-brown);
+      margin-bottom: 0.4rem;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: inherit;
+      color: var(--brown);
+      background: var(--cream);
+      outline: none;
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+    input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201,151,58,0.14);
+    }
+
+    .book-input-group {
+      background: var(--paper);
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-bottom: 0.9rem;
+      border: 1px solid var(--border);
+    }
+
+    .book-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+      font-family: 'Playfair Display', serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--mid-brown);
+      margin-bottom: 0.9rem;
+    }
+
+    .lookup-btn {
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      color: var(--mid-brown);
+      white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s;
+      flex-shrink: 0;
+    }
+    .lookup-btn:hover { background: var(--muted-gold); border-color: var(--gold); }
+    .lookup-btn:disabled { opacity: 0.5; cursor: default; }
+
+    .lookup-preview {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+      padding: 0.65rem 0.9rem;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.84rem;
+      animation: rise 0.2s ease;
+    }
+    .lookup-cover {
+      width: 36px;
+      height: 52px;
+      object-fit: cover;
+      border-radius: 3px;
+      flex-shrink: 0;
+      box-shadow: 0 1px 4px rgba(44,24,16,0.2);
+    }
+    .lookup-info { flex: 1; line-height: 1.45; }
+    .lookup-found-title { font-weight: 600; }
+    .lookup-found-meta { color: var(--gray); font-size: 0.78rem; margin-top: 0.1rem; }
+    .lookup-not-found { color: var(--gray); font-style: italic; }
+
+    .book-card-cover {
+      width: 64px;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 4px;
+      margin: 0 auto 0.75rem;
+      display: block;
+      box-shadow: 0 2px 10px rgba(44,24,16,0.2);
+    }
+    .book-card-pages {
+      font-size: 0.75rem;
+      color: var(--gray);
+      margin-top: 0.25rem;
+    }
+
+    .already-read-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+      padding-top: 0.65rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.78rem;
+      color: var(--gray);
+      cursor: pointer;
+      user-select: none;
+    }
+    .already-read-label input[type="checkbox"] {
+      accent-color: var(--gold);
+      cursor: pointer;
+      width: 14px;
+      height: 14px;
+    }
+
+    .already-read-info {
+      font-size: 0.78rem;
+      color: var(--gray);
+      margin-top: 0.35rem;
+      font-style: italic;
+    }
+
+    .edit-books-btn {
+      width: 100%;
+      margin-top: 1.25rem;
+      padding: 0.7rem;
+      background: transparent;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: inherit;
+      color: var(--mid-brown);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .edit-books-btn:hover { border-color: var(--gold); background: var(--muted-gold); }
+
+    .book-number {
+      width: 22px;
+      height: 22px;
+      background: var(--gold);
+      color: #fff;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    @media (max-width: 480px) { .input-row { grid-template-columns: 1fr; } }
+
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.5rem 0;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      padding: 0.9rem 1.5rem;
+      border: none;
+      border-radius: 9px;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.18s, transform 0.1s;
+    }
+    .btn:active { transform: scale(0.985); }
+
+    .btn-primary {
+      background: var(--brown);
+      color: var(--light-gold);
+    }
+    .btn-primary:hover { background: #3d2215; }
+
+    .btn-gold {
+      background: var(--gold);
+      color: #fff;
+    }
+    .btn-gold:hover { background: #b8870a; }
+
+    .btn-secondary {
+      background: var(--paper);
+      color: var(--mid-brown);
+      border: 1.5px solid var(--border);
+    }
+    .btn-secondary:hover { background: var(--border); }
+
+    .link-btn {
+      background: none;
+      border: none;
+      color: var(--gold);
+      font-size: inherit;
+      font-family: inherit;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+    }
+    .link-btn:hover { color: var(--mid-brown); }
+
+    /* ── Book cards (vote view — interactive) ── */
+    .books-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+
+    .book-card {
+      background: var(--white);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem 1.25rem 1.25rem;
+      cursor: pointer;
+      transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+      position: relative;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    /* Coloured top strip per book */
+    .book-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 5px;
+      border-radius: 12px 12px 0 0;
+    }
+    .books-grid .book-card:nth-child(1)::before { background: var(--book1); }
+    .books-grid .book-card:nth-child(2)::before { background: var(--book2); }
+    .books-grid .book-card:nth-child(3)::before { background: var(--book3); }
+
+    /* Same strip for display-only admin cards */
+    .books-display .book-card:nth-child(1)::before { background: var(--book1); }
+    .books-display .book-card:nth-child(2)::before { background: var(--book2); }
+    .books-display .book-card:nth-child(3)::before { background: var(--book3); }
+
+    .book-card:hover {
+      border-color: var(--gold);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-3px);
+    }
+
+    .book-card.selected {
+      border-color: var(--gold);
+      background: var(--muted-gold);
+      box-shadow: var(--shadow-md);
+    }
+
+    .book-card.selected::after {
+      content: '✓';
+      position: absolute;
+      top: 10px; right: 10px;
+      width: 22px; height: 22px;
+      background: var(--gold);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 0.7rem;
+      font-weight: 700;
+      line-height: 22px;
+      text-align: center;
+    }
+
+    /* Display-only book cards (admin view) */
+    .books-display {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .books-display .book-card {
+      cursor: default;
+    }
+    .books-display .book-card:hover {
+      transform: none;
+      box-shadow: none;
+      border-color: var(--border);
+    }
+
+    .book-icon { font-size: 2.2rem; margin-bottom: 0.75rem; }
+
+    .book-card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 600;
+      line-height: 1.35;
+      margin-bottom: 0.35rem;
+    }
+
+    .book-card-author {
+      font-size: 0.82rem;
+      color: var(--gray);
+      font-style: italic;
+    }
+
+    /* ── Alert ── */
+    .alert {
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      margin-bottom: 1.25rem;
+      display: none;
+    }
+    .alert-error {
+      background: #fef2f2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+    .alert-success {
+      background: #f0fdf4;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+    }
+
+    /* ── Progress box (shared by waiting + admin views) ── */
+    .progress-box {
+      background: var(--paper);
+      border-radius: 10px;
+      padding: 1.25rem;
+      border: 1px solid var(--border);
+    }
+
+    .progress-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.88rem;
+      color: var(--gray);
+      margin-bottom: 0.6rem;
+    }
+
+    .progress-track {
+      background: var(--border);
+      border-radius: 99px;
+      height: 8px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--gold);
+      border-radius: 99px;
+      transition: width 0.5s ease;
+    }
+
+    .voter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-top: 1rem;
+    }
+
+    .chip {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 0.28rem 0.75rem;
+      font-size: 0.78rem;
+      color: var(--mid-brown);
+    }
+
+    /* ── Waiting view extras ── */
+    .waiting-hero {
+      text-align: center;
+      padding: 1rem 0 1.5rem;
+    }
+    .waiting-hero .emoji { font-size: 3rem; margin-bottom: 0.75rem; }
+
+    .my-vote-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--muted-gold);
+      border: 1px solid var(--light-gold);
+      border-radius: 99px;
+      padding: 0.35rem 0.9rem;
+      font-size: 0.85rem;
+      color: var(--mid-brown);
+      margin: 0.75rem 0 0;
+      font-style: italic;
+    }
+
+    .hint {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--gray);
+      margin-top: 1.25rem;
+    }
+
+    /* ── Waiting dots ── */
+    .dots span {
+      opacity: 0;
+      animation: blink 1.4s infinite;
+    }
+    .dots span:nth-child(2) { animation-delay: 0.2s; }
+    .dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink {
+      0%, 80%, 100% { opacity: 0; }
+      40%           { opacity: 1; }
+    }
+
+    /* ── Landing view ── */
+    .landing-hero {
+      text-align: center;
+      padding: 2rem 0 1.5rem;
+    }
+    .landing-hero .emoji { font-size: 3.5rem; margin-bottom: 1rem; }
+    .landing-hero h2 { margin-bottom: 0.5rem; }
+
+    .organizer-link {
+      display: block;
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.82rem;
+      color: var(--gray);
+    }
+
+    /* ── Results ── */
+    .winner-banner {
+      background: linear-gradient(135deg, var(--brown) 0%, #4a2518 100%);
+      color: var(--light-gold);
+      border-radius: 14px;
+      padding: 2rem 2rem 1.75rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .winner-banner .crown { font-size: 2rem; }
+    .winner-label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      opacity: 0.6;
+      margin: 0.5rem 0 0.6rem;
+    }
+    .winner-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1.2;
+      margin-bottom: 0.35rem;
+    }
+    .winner-author {
+      font-style: italic;
+      opacity: 0.75;
+      font-size: 0.95rem;
+    }
+
+    .result-book {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+    .result-book.is-winner {
+      border-color: var(--gold);
+      background: var(--muted-gold);
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.5rem;
+      margin-bottom: 0.55rem;
+    }
+
+    .result-book-title {
+      font-family: 'Playfair Display', serif;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    .result-book-author {
+      color: var(--gray);
+      font-size: 0.82rem;
+      font-style: italic;
+    }
+    .result-tally {
+      font-size: 0.82rem;
+      color: var(--gray);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .result-track {
+      background: var(--border);
+      border-radius: 99px;
+      height: 6px;
+      overflow: hidden;
+    }
+    .result-fill {
+      height: 100%;
+      background: var(--gold);
+      border-radius: 99px;
+      width: 0;
+      transition: width 0.8s cubic-bezier(0.34, 1.4, 0.64, 1);
+    }
+    .result-book.is-winner .result-fill { background: var(--book1); }
+
+    .breakdown { margin-top: 2rem; }
+    .breakdown h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: var(--mid-brown);
+    }
+    .breakdown-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.45rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.88rem;
+    }
+    .breakdown-name { font-weight: 600; }
+    .breakdown-arrow { color: var(--gold); }
+    .breakdown-book { color: var(--gray); font-style: italic; }
+
+    /* ── Share ── */
+    .share-area {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 0.9rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.83rem;
+      color: var(--gray);
+    }
+    .share-area input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 0.83rem;
+      color: var(--mid-brown);
+      outline: none;
+      font-family: monospace;
+      min-width: 0;
+    }
+    .copy-btn {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 0.3rem 0.7rem;
+      font-size: 0.78rem;
+      cursor: pointer;
+      color: var(--mid-brown);
+      white-space: nowrap;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .copy-btn:hover { background: var(--muted-gold); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="header-title">📚 Book Club Vote</div>
+  </div>
+  <div class="header-right">
+    <span class="organizer-badge" id="organizer-badge" style="display:none">Organizer</span>
+    <button class="reset-btn" id="reset-btn" style="display:none">↺ New vote</button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── ROLE VIEW (no organizer assigned yet) ── -->
+  <div id="role-view" class="view">
+    <div class="card">
+      <div class="landing-hero">
+        <div class="emoji">📖</div>
+        <h2 id="role-welcome">Welcome</h2>
+        <p class="subtitle">No organizer has been assigned yet for this round.</p>
+      </div>
+      <button class="btn btn-gold" id="claim-organizer-btn">I'm the organizer</button>
+      <button class="btn btn-secondary" id="choose-voter-btn" style="margin-top:0.75rem">I'll vote</button>
+    </div>
+  </div>
+
+  <!-- ── LANDING VIEW (voter, no books set up yet) ── -->
+  <div id="landing-view" class="view">
+    <div class="card">
+      <div class="landing-hero">
+        <div class="emoji">📖</div>
+        <h2>Waiting for the organizer</h2>
+        <p class="subtitle" style="margin-bottom:0">
+          The organizer hasn't opened the vote yet.<br>
+          This page will update automatically once books are added.
+        </p>
+      </div>
+      <p class="hint" style="margin-top:1.5rem">Want to run this round? <button class="link-btn" data-take-organizer>Become the organizer &rarr;</button></p>
+    </div>
+  </div>
+
+  <!-- ── SETUP VIEW (organizer only) ── -->
+  <div id="setup-view" class="view">
+    <div class="card">
+      <h2>Set up the vote</h2>
+      <p class="subtitle">Add up to 3 book suggestions, then share the link with your club so they can vote.</p>
+
+      <div id="setup-error" class="alert alert-error"></div>
+
+      <div class="book-input-group">
+        <div class="book-label">
+          <span><span class="book-number">1</span> First book</span>
+          <button class="lookup-btn" data-lookup="1">Look up</button>
+        </div>
+        <div class="input-row">
+          <div class="form-group" style="margin-bottom:0">
+            <label>Title</label>
+            <input type="text" id="b1-title" placeholder="e.g. Dune" />
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Author</label>
+            <input type="text" id="b1-author" placeholder="e.g. Frank Herbert" />
+          </div>
+        </div>
+        <div id="b1-preview" class="lookup-preview" style="display:none"></div>
+      </div>
+
+      <div class="book-input-group">
+        <div class="book-label">
+          <span><span class="book-number">2</span> Second book</span>
+          <button class="lookup-btn" data-lookup="2">Look up</button>
+        </div>
+        <div class="input-row">
+          <div class="form-group" style="margin-bottom:0">
+            <label>Title</label>
+            <input type="text" id="b2-title" placeholder="e.g. Piranesi" />
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Author</label>
+            <input type="text" id="b2-author" placeholder="e.g. Susanna Clarke" />
+          </div>
+        </div>
+        <div id="b2-preview" class="lookup-preview" style="display:none"></div>
+      </div>
+
+      <div class="book-input-group">
+        <div class="book-label">
+          <span><span class="book-number">3</span> Third book <span style="font-weight:400;color:var(--gray)">(optional)</span></span>
+          <button class="lookup-btn" data-lookup="3">Look up</button>
+        </div>
+        <div class="input-row">
+          <div class="form-group" style="margin-bottom:0">
+            <label>Title</label>
+            <input type="text" id="b3-title" placeholder="e.g. Normal People" />
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>Author</label>
+            <input type="text" id="b3-author" placeholder="e.g. Sally Rooney" />
+          </div>
+        </div>
+        <div id="b3-preview" class="lookup-preview" style="display:none"></div>
+      </div>
+
+      <button class="btn btn-gold" id="setup-btn">Open voting &rarr;</button>
+    </div>
+  </div>
+
+  <!-- ── ADMIN VIEW (organizer, voting in progress) ── -->
+  <div id="admin-view" class="view">
+    <div class="card">
+      <h2>Vote in progress</h2>
+      <p class="subtitle">Waiting for everyone to vote. Results will be revealed once all votes are in.</p>
+
+      <div id="admin-books" class="books-display"></div>
+
+      <div class="progress-box">
+        <div class="progress-row">
+          <span>Votes received</span>
+          <span id="admin-count">0 / 0</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="admin-fill" style="width:0%"></div>
+        </div>
+        <div class="voter-chips" id="admin-voter-chips"></div>
+      </div>
+
+      <p class="hint" style="margin-top:1.25rem">This page refreshes automatically.</p>
+
+      <button class="edit-books-btn" id="edit-books-btn">✎ Edit books &amp; reset votes</button>
+    </div>
+  </div>
+
+  <!-- ── VOTE VIEW (voter, not yet voted) ── -->
+  <div id="vote-view" class="view">
+    <div class="card">
+
+      <!-- Step 2: books -->
+      <div id="vote-step-2">
+        <h2>Cast your vote</h2>
+        <p class="subtitle" id="vote-subtitle"></p>
+
+        <div class="my-vote-pill" id="voting-as-pill" style="margin-bottom:1.25rem"></div>
+
+        <div id="vote-error" class="alert alert-error"></div>
+
+        <div id="books-grid" class="books-grid"></div>
+
+        <button class="btn btn-gold" id="vote-btn">Submit vote</button>
+
+        <div id="report-read-row" style="margin-top:0.75rem;display:none">
+          <button class="btn btn-secondary" id="report-read-btn">I've read these — notify the organizer</button>
+          <div id="report-read-success" class="alert alert-success" style="display:none;margin-top:0.5rem"></div>
+        </div>
+
+        <p class="hint" style="margin-top:1rem">Want to run this round? <button class="link-btn" data-take-organizer>Become the organizer &rarr;</button></p>
+
+      </div>
+
+      <!-- Step waiting: notified organizer, waiting for new books -->
+      <div id="vote-step-waiting" style="display:none">
+        <div class="waiting-hero">
+          <div class="emoji">&#128218;</div>
+          <h2>Waiting for new books</h2>
+          <p class="subtitle" style="margin-bottom:0">
+            The organizer has been notified. This page will update automatically once the book list is refreshed<span class="dots"><span>.</span><span>.</span><span>.</span></span>
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── WAITING VIEW (voter, has voted) ── -->
+  <div id="waiting-view" class="view">
+    <div class="card">
+      <div class="waiting-hero">
+        <div class="emoji">&#9203;</div>
+        <h2>Your vote is in!</h2>
+        <p class="subtitle" style="margin-bottom:0">Waiting for the others<span class="dots"><span>.</span><span>.</span><span>.</span></span></p>
+        <div class="my-vote-pill" id="my-vote-pill" style="display:none"></div>
+      </div>
+
+      <div class="progress-box">
+        <div class="progress-row">
+          <span>Votes received</span>
+          <span id="waiting-count">0 / 0</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="waiting-fill" style="width:0%"></div>
+        </div>
+        <div class="voter-chips" id="voter-chips"></div>
+      </div>
+
+      <p class="hint">Results are hidden until everyone has voted. This page refreshes automatically.</p>
+      <p class="hint" style="margin-top:0.5rem">Want to run this round? <button class="link-btn" data-take-organizer>Become the organizer &rarr;</button></p>
+    </div>
+  </div>
+
+  <!-- ── RESULTS VIEW (everyone) ── -->
+  <div id="results-view" class="view">
+    <div class="winner-banner">
+      <div class="crown" id="winner-crown">&#128081;</div>
+      <div class="winner-label" id="winner-label">Next book we're reading</div>
+      <div class="winner-title" id="winner-title">—</div>
+      <div class="winner-author" id="winner-author"></div>
+    </div>
+
+    <div class="card">
+      <h2>The results</h2>
+      <p class="subtitle" id="results-sub"></p>
+
+      <div class="share-area" id="share-area" style="display:none">
+        <span>Share:</span>
+        <input type="text" id="share-url" readonly />
+        <button class="copy-btn" id="copy-btn">Copy link</button>
+      </div>
+
+      <div id="results-books"></div>
+      <div id="breakdown" class="breakdown"></div>
+
+      <p class="organizer-link" style="margin-top:2rem">
+        Are you the organizer?
+        <button class="link-btn" data-new-vote>Start a new vote &rarr;</button>
+      </p>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  let pollTimer = null;
+  let selectedBook = null;
+  let currentUser = '';
+  let pendingVoterName = '';
+  let waitingForBookUpdate = false;
+  let reportedBookTitles = null;
+  const bookMeta = {}; // { 1: { pageCount, coverUrl }, 2: ..., 3: ... }
+  let editMode = false;
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  function esc(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function showView(id) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function showError(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  function hideError(id) {
+    document.getElementById(id).style.display = 'none';
+  }
+
+  function startPolling() {
+    if (!pollTimer) pollTimer = setInterval(fetchState, 5000);
+  }
+
+  function stopPolling() {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+
+  // ── Header chrome ──────────────────────────────────────────────────────────
+
+  function updateHeader(amOrganizer) {
+    document.getElementById('organizer-badge').style.display = amOrganizer ? '' : 'none';
+    document.getElementById('reset-btn').style.display = amOrganizer ? '' : 'none';
+  }
+
+  // ── Fetch & render ─────────────────────────────────────────────────────────
+
+  async function fetchState() {
+    const res = await fetch('/api/state');
+    const state = await res.json();
+    window._lastState = state;
+    render(state);
+  }
+
+  function render(state) {
+    if (editMode) return;
+
+    const amOrganizer = state.organizer === currentUser;
+    const choseVoter = localStorage.getItem('bc_role') === 'voter';
+    updateHeader(amOrganizer);
+
+    const hasVoted = currentUser && state.voterNames && state.voterNames.includes(currentUser);
+
+    if (state.allVoted) {
+      showView('results-view');
+      renderResults(state);
+      stopPolling();
+      return;
+    }
+
+    if (amOrganizer) {
+      if (state.phase === 'setup') {
+        showView('setup-view');
+        stopPolling();
+      } else {
+        showView('admin-view');
+        renderAdminView(state);
+        startPolling();
+      }
+    } else if (!state.organizer && !choseVoter) {
+      showView('role-view');
+      document.getElementById('role-welcome').textContent = `Welcome, ${currentUser}`;
+      stopPolling();
+    } else {
+      if (state.phase === 'setup') {
+        showView('landing-view');
+        startPolling();
+      } else if (hasVoted) {
+        showView('waiting-view');
+        renderWaiting(state);
+        startPolling();
+      } else {
+        showView('vote-view');
+        if (waitingForBookUpdate) {
+          const currentTitles = state.books.map(b => b.title).join('|');
+          if (currentTitles !== reportedBookTitles) {
+            waitingForBookUpdate = false;
+            reportedBookTitles = null;
+            renderVoteView(state);
+            stopPolling();
+          }
+          // else: still same books — stay on waiting UI, keep polling
+        } else {
+          renderVoteView(state);
+          stopPolling();
+        }
+      }
+    }
+  }
+
+  // ── Book lookup ────────────────────────────────────────────────────────────
+
+  document.addEventListener('click', async e => {
+    const btn = e.target.closest('[data-lookup]');
+    if (!btn) return;
+
+    const i = btn.dataset.lookup;
+    const title = document.getElementById(`b${i}-title`).value.trim();
+    const author = document.getElementById(`b${i}-author`).value.trim();
+    if (!title) return;
+
+    btn.disabled = true;
+    btn.textContent = '…';
+    const preview = document.getElementById(`b${i}-preview`);
+    preview.style.display = 'none';
+
+    try {
+      const params = new URLSearchParams({ title });
+      if (author) params.set('author', author);
+      let res, data, lastErr;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          if (attempt > 0) await new Promise(r => setTimeout(r, 500 * attempt));
+          res = await fetch(`/api/lookup?${params}`);
+          data = await res.json();
+          break;
+        } catch (err) {
+          lastErr = err;
+        }
+      }
+      if (!data) throw lastErr;
+
+      if (!data.found) {
+        preview.innerHTML = `<span class="lookup-not-found">No results found for "${esc(title)}".</span>`;
+        bookMeta[i] = {};
+      } else {
+        if (!author && data.author) document.getElementById(`b${i}-author`).value = data.author;
+        const pages = data.pageCount ? `${data.pageCount} pages` : 'page count unknown';
+        const coverHtml = data.coverUrl
+          ? `<img class="lookup-cover" src="${esc(data.coverUrl)}" alt="" />`
+          : `<span style="font-size:1.5rem;flex-shrink:0">📖</span>`;
+        preview.innerHTML = `
+          ${coverHtml}
+          <div class="lookup-info">
+            <div class="lookup-found-title">${esc(data.title)}</div>
+            <div class="lookup-found-meta">${data.author ? esc(data.author) + ' · ' : ''}${pages}</div>
+          </div>`;
+        bookMeta[i] = { pageCount: data.pageCount, coverUrl: data.coverUrl };
+      }
+      preview.style.display = 'flex';
+    } catch {
+      preview.innerHTML = `<span class="lookup-not-found">Lookup failed — check your connection.</span>`;
+      preview.style.display = 'flex';
+      bookMeta[i] = {};
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Look up';
+  });
+
+  // Enter on a title input triggers lookup for that book
+  [1, 2, 3].forEach(i => {
+    document.getElementById(`b${i}-title`).addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); document.querySelector(`[data-lookup="${i}"]`).click(); }
+    });
+  });
+
+  // ── Claim organizer role (landing, vote, and waiting views all have this link) ──
+
+  document.getElementById('claim-organizer-btn').addEventListener('click', async () => {
+    const res = await fetch('/api/claim-organizer', { method: 'POST' });
+    if (res.ok) fetchState();
+  });
+
+  document.getElementById('choose-voter-btn').addEventListener('click', () => {
+    localStorage.setItem('bc_role', 'voter');
+    fetchState();
+  });
+
+  document.addEventListener('click', async e => {
+    if (!e.target.closest('[data-take-organizer]')) return;
+    if (!confirm('Become the organizer? The current books and all votes will be cleared.')) return;
+    const res = await fetch('/api/take-organizer', { method: 'POST' });
+    if (res.ok) {
+      localStorage.removeItem('bc_role');
+      fetchState();
+    }
+  });
+
+  // ── Setup / Edit books ─────────────────────────────────────────────────────
+
+  document.getElementById('setup-btn').addEventListener('click', async () => {
+    hideError('setup-error');
+    const books = [1, 2, 3].map(i => ({
+      title: document.getElementById(`b${i}-title`).value.trim(),
+      author: document.getElementById(`b${i}-author`).value.trim(),
+      pageCount: bookMeta[i]?.pageCount || null,
+      coverUrl: bookMeta[i]?.coverUrl || null,
+    })).filter(b => b.title);
+
+    if (books.length < 2) return showError('setup-error', 'Please enter at least 2 book titles.');
+
+    if (editMode) {
+      const res = await fetch('/api/edit-books', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ books }),
+      });
+      const data = await res.json();
+      if (!res.ok) return showError('setup-error', data.error);
+      editMode = false;
+      document.getElementById('setup-view').querySelector('h2').textContent = 'Set up the vote';
+      document.getElementById('setup-btn').textContent = 'Open voting →';
+    } else {
+      const res = await fetch('/api/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ books }),
+      });
+      const data = await res.json();
+      if (!res.ok) return showError('setup-error', data.error);
+    }
+
+    fetchState();
+  });
+
+  document.getElementById('edit-books-btn').addEventListener('click', () => {
+    if (!confirm('Edit the book list? All current votes will be reset.')) return;
+
+    editMode = true;
+    stopPolling();
+
+    // Pre-fill fields with current books from last fetched state
+    const books = (window._lastState?.books) || [];
+    [1, 2, 3].forEach(i => {
+      const book = books[i - 1];
+      document.getElementById(`b${i}-title`).value = book?.title || '';
+      document.getElementById(`b${i}-author`).value = book?.author || '';
+      const preview = document.getElementById(`b${i}-preview`);
+      if (book?.pageCount || book?.coverUrl) {
+        bookMeta[i] = { pageCount: book.pageCount, coverUrl: book.coverUrl };
+        const pages = book.pageCount ? `${book.pageCount} pages` : '';
+        const coverHtml = book.coverUrl
+          ? `<img class="lookup-cover" src="${esc(book.coverUrl)}" alt="" />`
+          : `<span style="font-size:1.5rem;flex-shrink:0">📖</span>`;
+        preview.innerHTML = `${coverHtml}<div class="lookup-info">
+          <div class="lookup-found-title">${esc(book.title)}</div>
+          <div class="lookup-found-meta">${book.author ? esc(book.author) + ' · ' : ''}${pages}</div>
+        </div>`;
+        preview.style.display = 'flex';
+      } else {
+        preview.style.display = 'none';
+        bookMeta[i] = {};
+      }
+    });
+
+    // Adapt form for edit mode
+    document.getElementById('setup-view').querySelector('h2').textContent = 'Edit books';
+    document.getElementById('setup-btn').textContent = 'Save & reset votes';
+    hideError('setup-error');
+    showView('setup-view');
+  });
+
+  // ── Admin view ─────────────────────────────────────────────────────────────
+
+  function renderAdminView(state) {
+    // Books (display-only) + already-read info
+    document.getElementById('admin-books').innerHTML = state.books.map(book => {
+      const names = state.alreadyReadNames?.[book.title] || [];
+      const readInfo = names.length === 0 ? ''
+        : `<div class="already-read-info" style="margin-top:0.5rem">
+             Already read by: ${names.map(n => esc(n)).join(', ')}
+           </div>`;
+      return `
+        <div class="book-card">
+          ${book.coverUrl
+            ? `<img class="book-card-cover" src="${esc(book.coverUrl)}" alt="" />`
+            : `<div class="book-icon">📖</div>`}
+          <div class="book-card-title">${esc(book.title)}</div>
+          ${book.author ? `<div class="book-card-author">${esc(book.author)}</div>` : ''}
+          ${book.pageCount ? `<div class="book-card-pages">${book.pageCount} pages</div>` : ''}
+          ${readInfo}
+        </div>
+      `;
+    }).join('');
+
+    // Progress
+    document.getElementById('admin-count').textContent =
+      `${state.voteCount} / ${state.expectedVoters}`;
+
+    const pct = state.expectedVoters > 0 ? (state.voteCount / state.expectedVoters) * 100 : 0;
+    document.getElementById('admin-fill').style.width = `${pct}%`;
+
+    document.getElementById('admin-voter-chips').innerHTML =
+      state.voterNames.map(n => `<span class="chip">&#10003; ${esc(n)}</span>`).join('');
+  }
+
+  // ── Vote view ──────────────────────────────────────────────────────────────
+
+  function renderVoteView(state) {
+    document.getElementById('vote-step-2').style.display = 'block';
+    document.getElementById('vote-step-waiting').style.display = 'none';
+    document.getElementById('report-read-row').style.display = 'none';
+    document.getElementById('report-read-success').style.display = 'none';
+    selectedBook = null;
+    pendingVoterName = currentUser;
+    hideError('vote-error');
+    document.getElementById('voting-as-pill').textContent = `Voting as: ${currentUser}`;
+
+    // Pre-render books for step 2
+    const grid = document.getElementById('books-grid');
+    grid.innerHTML = state.books.map(book => {
+      const readCount = state.alreadyReadCounts?.[book.title] || 0;
+      const readLabel = readCount === 1 ? '1 member already read this'
+                      : readCount > 1  ? `${readCount} members already read this`
+                      : '';
+      return `
+        <div class="book-card" data-title="${esc(book.title)}" tabindex="0" role="button">
+          ${book.coverUrl
+            ? `<img class="book-card-cover" src="${esc(book.coverUrl)}" alt="" />`
+            : `<div class="book-icon">📖</div>`}
+          <div class="book-card-title">${esc(book.title)}</div>
+          ${book.author ? `<div class="book-card-author">${esc(book.author)}</div>` : ''}
+          ${book.pageCount ? `<div class="book-card-pages">${book.pageCount} pages</div>` : ''}
+          ${readLabel ? `<div class="already-read-info">${readLabel}</div>` : ''}
+          <label class="already-read-label" onclick="event.stopPropagation()">
+            <input type="checkbox" class="already-read-cb" data-book="${esc(book.title)}" onclick="event.stopPropagation()" />
+            I've already read this
+          </label>
+        </div>
+      `;
+    }).join('');
+
+    grid.querySelectorAll('.book-card').forEach(card => {
+      const select = () => {
+        grid.querySelectorAll('.book-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedBook = card.dataset.title;
+      };
+      card.addEventListener('click', select);
+      card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') select(); });
+    });
+
+    grid.addEventListener('change', e => {
+      if (!e.target.classList.contains('already-read-cb')) return;
+      const anyChecked = [...grid.querySelectorAll('.already-read-cb:checked')].length > 0;
+      document.getElementById('report-read-row').style.display = anyChecked ? 'block' : 'none';
+      document.getElementById('report-read-success').style.display = 'none';
+    });
+
+    document.getElementById('vote-subtitle').textContent =
+      `Which book should we read next? (${state.voteCount} of ${state.expectedVoters} votes in)`;
+  }
+
+
+  document.getElementById('report-read-btn').addEventListener('click', async () => {
+    const alreadyRead = [...document.querySelectorAll('.already-read-cb:checked')].map(cb => cb.dataset.book);
+    const successEl = document.getElementById('report-read-success');
+    successEl.style.display = 'none';
+
+    const res = await fetch('/api/report-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: pendingVoterName, alreadyRead }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) return showError('vote-error', data.error);
+
+    waitingForBookUpdate = true;
+    reportedBookTitles = (window._lastState?.books || []).map(b => b.title).join('|');
+    document.getElementById('vote-step-2').style.display = 'none';
+    document.getElementById('vote-step-waiting').style.display = 'block';
+    startPolling();
+  });
+
+  document.getElementById('vote-btn').addEventListener('click', async () => {
+    hideError('vote-error');
+    if (!selectedBook) return showError('vote-error', 'Please select a book.');
+
+    const alreadyRead = [...document.querySelectorAll('.already-read-cb:checked')].map(cb => cb.dataset.book);
+
+    const res = await fetch('/api/vote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: pendingVoterName, bookTitle: selectedBook, alreadyRead }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) return showError('vote-error', data.error);
+
+    fetchState();
+  });
+
+  // ── Waiting view ───────────────────────────────────────────────────────────
+
+  function renderWaiting(state) {
+    document.getElementById('waiting-count').textContent =
+      `${state.voteCount} / ${state.expectedVoters}`;
+
+    const pct = state.expectedVoters > 0 ? (state.voteCount / state.expectedVoters) * 100 : 0;
+    document.getElementById('waiting-fill').style.width = `${pct}%`;
+
+    document.getElementById('voter-chips').innerHTML =
+      state.voterNames.map(n => `<span class="chip">&#10003; ${esc(n)}</span>`).join('');
+
+    const pill = document.getElementById('my-vote-pill');
+    if (currentUser && state.voterNames.includes(currentUser)) {
+      pill.textContent = `You voted as: ${currentUser}`;
+      pill.style.display = 'inline-flex';
+    } else {
+      pill.style.display = 'none';
+    }
+  }
+
+
+  // ── Results view ───────────────────────────────────────────────────────────
+
+  function renderResults(state) {
+    const counts = state.voteCounts || {};
+    const maxVotes = Math.max(...Object.values(counts), 0);
+    const winners = state.books.filter(b => (counts[b.title] || 0) === maxVotes);
+    const isTie = winners.length > 1;
+
+    if (isTie) {
+      document.getElementById('winner-crown').textContent = '🤝';
+      document.getElementById('winner-label').textContent = "It's a tie!";
+      document.getElementById('winner-title').textContent = winners.map(w => w.title).join(' & ');
+      document.getElementById('winner-author').textContent = '';
+    } else {
+      const w = winners[0];
+      document.getElementById('winner-crown').textContent = '👑';
+      document.getElementById('winner-label').textContent = "Next book we're reading";
+      document.getElementById('winner-title').textContent = w.title;
+      document.getElementById('winner-author').textContent = w.author ? `by ${w.author}` : '';
+    }
+
+    document.getElementById('results-sub').textContent =
+      `${state.voteCount} member${state.voteCount !== 1 ? 's' : ''} voted`;
+
+    document.getElementById('share-area').style.display = 'flex';
+    document.getElementById('share-url').value = window.location.href;
+
+    const sorted = [...state.books].sort((a, b) => (counts[b.title] || 0) - (counts[a.title] || 0));
+
+    document.getElementById('results-books').innerHTML = sorted.map(book => {
+      const votes = counts[book.title] || 0;
+      const pct = state.voteCount > 0 ? (votes / state.voteCount) * 100 : 0;
+      const isWinner = votes === maxVotes;
+      return `
+        <div class="result-book ${isWinner ? 'is-winner' : ''}">
+          <div class="result-header">
+            <div>
+              <span class="result-book-title">${esc(book.title)}</span>
+              ${book.author ? `<span class="result-book-author"> &middot; ${esc(book.author)}</span>` : ''}
+            </div>
+            <div class="result-tally">${votes} vote${votes !== 1 ? 's' : ''} &middot; ${Math.round(pct)}%</div>
+          </div>
+          <div class="result-track">
+            <div class="result-fill" data-pct="${pct}"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.result-fill').forEach(el => {
+        el.style.width = el.dataset.pct + '%';
+      });
+    });
+
+    if (state.voteDetails) {
+      const entries = Object.entries(state.voteDetails);
+      document.getElementById('breakdown').innerHTML = `
+        <h3>Who voted for what</h3>
+        ${entries.map(([name, title]) => `
+          <div class="breakdown-row">
+            <span class="breakdown-name">${esc(name)}</span>
+            <span class="breakdown-arrow">&rarr;</span>
+            <span class="breakdown-book">${esc(title)}</span>
+          </div>
+        `).join('')}
+      `;
+    }
+  }
+
+  document.getElementById('copy-btn').addEventListener('click', () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy link'; }, 1800);
+    });
+  });
+
+  // ── Reset helpers ──────────────────────────────────────────────────────────
+
+  async function resetVote() {
+    await fetch('/api/reset', { method: 'POST' });
+    fetchState();
+  }
+
+  document.getElementById('reset-btn').addEventListener('click', async () => {
+    if (!confirm('Start a new vote? All current votes will be cleared.')) return;
+    await resetVote();
+  });
+
+  document.addEventListener('click', async e => {
+    if (e.target.closest('[data-new-vote]')) {
+      if (!confirm('Start a new vote? This will clear all current results.')) return;
+      await resetVote();
+    }
+  });
+
+  // ── Boot ───────────────────────────────────────────────────────────────────
+
+  async function boot() {
+    const res = await fetch('/api/me');
+    const data = await res.json();
+    currentUser = data.name;
+    fetchState();
+  }
+
+  boot();
+</script>
+</body>
+</html>
