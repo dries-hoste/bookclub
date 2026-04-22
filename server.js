@@ -38,7 +38,13 @@ app.use(express.static('public'));
 // ── Storage ────────────────────────────────────────────────────────────────
 
 function defaultState() {
-  return { books: [], expectedVoters: 0, votes: {}, alreadyRead: {}, phase: 'setup', organizer: null };
+  return { books: [], expectedVoters: 0, votes: {}, alreadyRead: {}, phase: 'setup', organizer: null, wishlist: [] };
+}
+
+function migrate(data) {
+  if (!data.alreadyRead) data.alreadyRead = {};
+  if (!data.wishlist) data.wishlist = [];
+  return data;
 }
 
 let storage;
@@ -60,7 +66,7 @@ if (process.env.DATABASE_URL) {
         )
       `);
       const { rows } = await pool.query('SELECT data FROM app_state WHERE id = 1');
-      return rows.length ? rows[0].data : defaultState();
+      return rows.length ? migrate(rows[0].data) : defaultState();
     },
     async save(s) {
       await pool.query(`
@@ -78,8 +84,7 @@ if (process.env.DATABASE_URL) {
       try {
         if (fs.existsSync(DATA_FILE)) {
           const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-          if (!data.alreadyRead) data.alreadyRead = {};
-          return data;
+          return migrate(data);
         }
       } catch (e) {
         console.error('Failed to load data.json:', e.message);
@@ -157,7 +162,7 @@ app.get('/api/state', (req, res) => {
     });
   });
 
-  const response = { phase: state.phase, books: state.books, expectedVoters: state.expectedVoters, voteCount, voterNames, allVoted, alreadyReadCounts, alreadyReadNames, organizer: state.organizer || null };
+  const response = { phase: state.phase, books: state.books, expectedVoters: state.expectedVoters, voteCount, voterNames, allVoted, alreadyReadCounts, alreadyReadNames, organizer: state.organizer || null, wishlist: state.wishlist || [] };
 
   if (allVoted) {
     const voteCounts = {};
@@ -182,7 +187,7 @@ app.post('/api/setup', async (req, res) => {
   const clean = cleanBooks(books);
   if (clean.length < 2) return res.status(400).json({ error: 'Please provide at least 2 valid book titles.' });
   const expectedVoters = Math.max(1, members.length - 1);
-  state = { books: clean, expectedVoters, votes: {}, alreadyRead: {}, phase: 'voting', organizer: state.organizer };
+  state = { books: clean, expectedVoters, votes: {}, alreadyRead: {}, phase: 'voting', organizer: state.organizer, wishlist: state.wishlist };
   await saveState();
   res.json({ success: true });
 });
@@ -214,8 +219,24 @@ app.post('/api/vote', async (req, res) => {
     const valid = alreadyRead.filter(t => state.books.some(b => b.title === t));
     if (valid.length > 0) state.alreadyRead[normalizedName] = valid;
   }
+
+  const allVoted = Object.keys(state.votes).length >= state.expectedVoters;
+  if (allVoted) {
+    const voteCounts = {};
+    state.books.forEach(b => { voteCounts[b.title] = 0; });
+    Object.values(state.votes).forEach(t => { voteCounts[t] = (voteCounts[t] || 0) + 1; });
+    const maxVotes = Math.max(...Object.values(voteCounts));
+    state.books
+      .filter(b => voteCounts[b.title] === maxVotes)
+      .forEach(winner => {
+        if (!state.wishlist.some(w => w.title === winner.title)) {
+          state.wishlist.push({ title: winner.title, author: winner.author, pageCount: winner.pageCount, coverUrl: winner.coverUrl, addedBy: null, fromVote: true });
+        }
+      });
+  }
+
   await saveState();
-  res.json({ success: true, allVoted: Object.keys(state.votes).length >= state.expectedVoters });
+  res.json({ success: true, allVoted });
 });
 
 app.post('/api/report-read', async (req, res) => {
@@ -233,6 +254,27 @@ app.post('/api/report-read', async (req, res) => {
   res.json({ success: true });
 });
 
+app.delete('/api/wishlist', async (req, res) => {
+  const title = req.query.title;
+  if (!title) return res.status(400).json({ error: 'Title required.' });
+  const before = state.wishlist.length;
+  state.wishlist = state.wishlist.filter(w => w.title !== title);
+  if (state.wishlist.length === before) return res.status(404).json({ error: 'Not found.' });
+  await saveState();
+  res.json({ success: true });
+});
+
+app.post('/api/wishlist', async (req, res) => {
+  const { title, author, pageCount, coverUrl } = req.body;
+  if (!title?.trim()) return res.status(400).json({ error: 'Please enter a title.' });
+  if (state.wishlist.some(w => w.title.toLowerCase() === title.trim().toLowerCase())) {
+    return res.status(409).json({ error: 'This book is already on the wishlist.' });
+  }
+  state.wishlist.push({ title: title.trim(), author: (author || '').trim(), pageCount: pageCount || null, coverUrl: coverUrl || null, addedBy: req.auth.user, fromVote: false });
+  await saveState();
+  res.json({ success: true });
+});
+
 app.post('/api/claim-organizer', async (req, res) => {
   if (state.organizer && state.organizer !== req.auth.user) {
     return res.status(409).json({ error: 'An organizer is already assigned.' });
@@ -243,16 +285,19 @@ app.post('/api/claim-organizer', async (req, res) => {
 });
 
 app.post('/api/take-organizer', async (req, res) => {
+  const wishlist = state.wishlist;
   state = defaultState();
   state.organizer = req.auth.user;
+  state.wishlist = wishlist;
   await saveState();
   res.json({ success: true });
 });
 
 app.post('/api/reset', async (req, res) => {
-  const organizer = state.organizer;
+  const { organizer, wishlist } = state;
   state = defaultState();
   state.organizer = organizer;
+  state.wishlist = wishlist;
   await saveState();
   res.json({ success: true });
 });

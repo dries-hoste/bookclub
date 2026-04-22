@@ -59,6 +59,12 @@
       gap: 0.75rem;
     }
 
+    .header-user {
+      font-size: 0.82rem;
+      color: var(--light-gold);
+      opacity: 0.75;
+    }
+
     .organizer-badge {
       font-size: 0.72rem;
       text-transform: uppercase;
@@ -707,6 +713,70 @@
       transition: background 0.15s;
     }
     .copy-btn:hover { background: var(--muted-gold); }
+
+    /* ── Wishlist panel ── */
+    #wishlist-panel {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 1.25rem 4rem;
+    }
+    .wishlist-inner {
+      background: var(--white);
+      border-radius: 14px;
+      padding: 1.5rem 2rem;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+    }
+    .wishlist-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .wishlist-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.15rem;
+    }
+    .wl-form-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .wl-form-row input {
+      flex: 1;
+      min-width: 120px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.88rem;
+      font-family: inherit;
+      color: var(--brown);
+      background: var(--paper);
+    }
+    .wl-form-row input:focus { outline: none; border-color: var(--gold); }
+    .wl-list { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; }
+    .wl-book {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--paper);
+    }
+    .wl-cover { width: 34px; height: 50px; object-fit: cover; border-radius: 3px; flex-shrink: 0; }
+    .wl-cover-placeholder { width: 34px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .wl-info { flex: 1; min-width: 0; }
+    .wl-book-title { font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .wl-book-author { font-size: 0.78rem; color: var(--gray); margin-top: 0.1rem; }
+    .wl-badge { font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 20px; font-weight: 600; background: var(--muted-gold); color: var(--mid-brown); border: 1px solid var(--border); white-space: nowrap; flex-shrink: 0; }
+    .wl-empty { font-size: 0.85rem; color: var(--gray); text-align: center; padding: 0.75rem 0; }
+    .wl-remove-btn { background: none; border: none; cursor: pointer; color: var(--gray); font-size: 1.1rem; line-height: 1; padding: 0.2rem 0.3rem; border-radius: 4px; flex-shrink: 0; }
+    .wl-remove-btn:hover { color: var(--brown); background: var(--border); }
+    .wl-card-btn { margin-top: 0.4rem; background: none; border: 1px solid var(--border); border-radius: 20px; padding: 0.2rem 0.65rem; font-size: 0.73rem; font-family: inherit; color: var(--gray); cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+    .wl-card-btn:hover:not(:disabled) { background: var(--muted-gold); border-color: var(--gold); color: var(--mid-brown); }
+    .wl-card-btn.on-wishlist { color: var(--mid-brown); border-color: var(--gold); background: var(--muted-gold); cursor: default; }
   </style>
 </head>
 <body>
@@ -716,6 +786,7 @@
     <div class="header-title">📚 Book Club Vote</div>
   </div>
   <div class="header-right">
+    <span class="header-user" id="header-user"></span>
     <span class="organizer-badge" id="organizer-badge" style="display:none">Organizer</span>
     <button class="reset-btn" id="reset-btn" style="display:none">↺ New vote</button>
   </div>
@@ -939,11 +1010,35 @@
 
 </main>
 
+<section id="wishlist-panel">
+  <div class="wishlist-inner">
+    <div class="wishlist-header">
+      <h3 class="wishlist-title">Reading wishlist</h3>
+      <button class="link-btn" id="wl-toggle-btn">+ Add book</button>
+    </div>
+
+    <div id="wl-add-form" style="display:none">
+      <div id="wl-error" class="alert alert-error" style="margin-bottom:0.75rem;display:none"></div>
+      <div class="wl-form-row">
+        <input type="text" id="wl-title" placeholder="Title" />
+        <input type="text" id="wl-author" placeholder="Author (optional)" />
+        <button class="lookup-btn" data-lookup="wl">Look up</button>
+      </div>
+      <div id="wl-preview" class="lookup-preview" style="display:none;margin-top:0.5rem"></div>
+      <button class="btn btn-gold" id="wl-submit-btn" style="margin-top:0.75rem">Add to wishlist</button>
+    </div>
+
+    <div id="wl-list" class="wl-list"></div>
+    <p id="wl-empty" class="wl-empty" style="display:none">No books yet — add one above or win a vote!</p>
+  </div>
+</section>
+
 <script>
   let pollTimer = null;
   let selectedBook = null;
   let currentUser = '';
   let pendingVoterName = '';
+  let wishlistMeta = {};
   let waitingForBookUpdate = false;
   let reportedBookTitles = null;
   const bookMeta = {}; // { 1: { pageCount, coverUrl }, 2: ..., 3: ... }
@@ -994,6 +1089,7 @@
     const res = await fetch('/api/state');
     const state = await res.json();
     window._lastState = state;
+    renderWishlist(state);
     render(state);
   }
 
@@ -1060,13 +1156,16 @@
     if (!btn) return;
 
     const i = btn.dataset.lookup;
-    const title = document.getElementById(`b${i}-title`).value.trim();
-    const author = document.getElementById(`b${i}-author`).value.trim();
+    const isWl = i === 'wl';
+    const titleEl = document.getElementById(isWl ? 'wl-title' : `b${i}-title`);
+    const authorEl = document.getElementById(isWl ? 'wl-author' : `b${i}-author`);
+    const title = titleEl.value.trim();
+    const author = authorEl.value.trim();
     if (!title) return;
 
     btn.disabled = true;
     btn.textContent = '…';
-    const preview = document.getElementById(`b${i}-preview`);
+    const preview = document.getElementById(isWl ? 'wl-preview' : `b${i}-preview`);
     preview.style.display = 'none';
 
     try {
@@ -1087,9 +1186,9 @@
 
       if (!data.found) {
         preview.innerHTML = `<span class="lookup-not-found">No results found for "${esc(title)}".</span>`;
-        bookMeta[i] = {};
+        if (isWl) wishlistMeta = {}; else bookMeta[i] = {};
       } else {
-        if (!author && data.author) document.getElementById(`b${i}-author`).value = data.author;
+        if (!author && data.author) authorEl.value = data.author;
         const pages = data.pageCount ? `${data.pageCount} pages` : 'page count unknown';
         const coverHtml = data.coverUrl
           ? `<img class="lookup-cover" src="${esc(data.coverUrl)}" alt="" />`
@@ -1100,13 +1199,14 @@
             <div class="lookup-found-title">${esc(data.title)}</div>
             <div class="lookup-found-meta">${data.author ? esc(data.author) + ' · ' : ''}${pages}</div>
           </div>`;
-        bookMeta[i] = { pageCount: data.pageCount, coverUrl: data.coverUrl };
+        if (isWl) wishlistMeta = { pageCount: data.pageCount, coverUrl: data.coverUrl };
+        else bookMeta[i] = { pageCount: data.pageCount, coverUrl: data.coverUrl };
       }
       preview.style.display = 'flex';
     } catch {
       preview.innerHTML = `<span class="lookup-not-found">Lookup failed — check your connection.</span>`;
       preview.style.display = 'flex';
-      bookMeta[i] = {};
+      if (isWl) wishlistMeta = {}; else bookMeta[i] = {};
     }
 
     btn.disabled = false;
@@ -1269,6 +1369,7 @@
       const readLabel = readCount === 1 ? '1 member already read this'
                       : readCount > 1  ? `${readCount} members already read this`
                       : '';
+      const onWishlist = (state.wishlist || []).some(w => w.title === book.title);
       return `
         <div class="book-card" data-title="${esc(book.title)}" tabindex="0" role="button">
           ${book.coverUrl
@@ -1282,12 +1383,14 @@
             <input type="checkbox" class="already-read-cb" data-book="${esc(book.title)}" onclick="event.stopPropagation()" />
             I've already read this
           </label>
+          <button class="wl-card-btn${onWishlist ? ' on-wishlist' : ''}" data-wl-book="${esc(book.title)}" ${onWishlist ? 'disabled' : ''}>${onWishlist ? '✓ On wishlist' : '+ Wishlist'}</button>
         </div>
       `;
     }).join('');
 
     grid.querySelectorAll('.book-card').forEach(card => {
-      const select = () => {
+      const select = e => {
+        if (e.target.closest('[data-wl-book]')) return;
         grid.querySelectorAll('.book-card').forEach(c => c.classList.remove('selected'));
         card.classList.add('selected');
         selectedBook = card.dataset.title;
@@ -1466,12 +1569,110 @@
     }
   });
 
+  // ── Wishlist ───────────────────────────────────────────────────────────────
+
+  function renderWishlist(state) {
+    const wishlist = state.wishlist || [];
+    const list = document.getElementById('wl-list');
+    const empty = document.getElementById('wl-empty');
+    if (!wishlist.length) {
+      list.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    list.innerHTML = wishlist.map(book => {
+      const coverHtml = book.coverUrl
+        ? `<img class="wl-cover" src="${esc(book.coverUrl)}" alt="" />`
+        : `<div class="wl-cover-placeholder">📖</div>`;
+      const badge = book.fromVote
+        ? `<span class="wl-badge">🏆 won a vote</span>`
+        : `<span class="wl-badge">added by ${esc(book.addedBy)}</span>`;
+      return `<div class="wl-book">
+        ${coverHtml}
+        <div class="wl-info">
+          <div class="wl-book-title">${esc(book.title)}</div>
+          ${book.author ? `<div class="wl-book-author">${esc(book.author)}</div>` : ''}
+        </div>
+        ${badge}
+        <button class="wl-remove-btn" data-remove-wl="${esc(book.title)}" title="Remove">&times;</button>
+      </div>`;
+    }).join('');
+  }
+
+  document.addEventListener('click', async e => {
+    const wlBtn = e.target.closest('[data-wl-book]');
+    if (wlBtn && !wlBtn.disabled) {
+      const title = wlBtn.dataset.wlBook;
+      const book = (window._lastState?.books || []).find(b => b.title === title);
+      wlBtn.disabled = true;
+      wlBtn.textContent = '…';
+      const res = await fetch('/api/wishlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, author: book?.author || '', pageCount: book?.pageCount || null, coverUrl: book?.coverUrl || null }),
+      });
+      if (res.ok) {
+        wlBtn.textContent = '✓ On wishlist';
+        wlBtn.classList.add('on-wishlist');
+      } else {
+        const data = await res.json();
+        wlBtn.textContent = '+ Wishlist';
+        wlBtn.disabled = false;
+      }
+      return;
+    }
+  });
+
+  document.addEventListener('click', async e => {
+    const btn = e.target.closest('[data-remove-wl]');
+    if (!btn) return;
+    const title = btn.dataset.removeWl;
+    await fetch(`/api/wishlist?title=${encodeURIComponent(title)}`, { method: 'DELETE' });
+    fetchState();
+  });
+
+  document.getElementById('wl-toggle-btn').addEventListener('click', () => {
+    const form = document.getElementById('wl-add-form');
+    const btn = document.getElementById('wl-toggle-btn');
+    const opening = form.style.display === 'none';
+    form.style.display = opening ? 'block' : 'none';
+    btn.textContent = opening ? '✕ Cancel' : '+ Add book';
+    if (opening) document.getElementById('wl-title').focus();
+  });
+
+  document.getElementById('wl-submit-btn').addEventListener('click', async () => {
+    const title = document.getElementById('wl-title').value.trim();
+    const author = document.getElementById('wl-author').value.trim();
+    const errEl = document.getElementById('wl-error');
+    errEl.style.display = 'none';
+
+    if (!title) { errEl.textContent = 'Please enter a title.'; errEl.style.display = 'block'; return; }
+
+    const res = await fetch('/api/wishlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, author, ...wishlistMeta }),
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+
+    document.getElementById('wl-title').value = '';
+    document.getElementById('wl-author').value = '';
+    document.getElementById('wl-preview').style.display = 'none';
+    wishlistMeta = {};
+    document.getElementById('wl-add-form').style.display = 'none';
+    document.getElementById('wl-toggle-btn').textContent = '+ Add book';
+    fetchState();
+  });
+
   // ── Boot ───────────────────────────────────────────────────────────────────
 
   async function boot() {
     const res = await fetch('/api/me');
     const data = await res.json();
     currentUser = data.name;
+    document.getElementById('header-user').textContent = currentUser;
     fetchState();
   }
 
