@@ -38,12 +38,16 @@ app.use(express.static('public'));
 // ── Storage ────────────────────────────────────────────────────────────────
 
 function defaultState() {
-  return { books: [], expectedVoters: 0, votes: {}, alreadyRead: {}, phase: 'setup', organizer: null, wishlist: [] };
+  return { books: [], expectedVoters: 0, votes: {}, alreadyRead: {}, phase: 'setup', organizer: null, wishlist: [], history: [], concludedAt: null, tieResolved: false, chosenBook: null };
 }
 
 function migrate(data) {
   if (!data.alreadyRead) data.alreadyRead = {};
   if (!data.wishlist) data.wishlist = [];
+  if (!data.history) data.history = [];
+  if (!('concludedAt' in data)) data.concludedAt = null;
+  if (!('tieResolved' in data)) data.tieResolved = false;
+  if (!('chosenBook' in data)) data.chosenBook = null;
   return data;
 }
 
@@ -163,7 +167,7 @@ app.get('/api/state', (req, res) => {
     });
   });
 
-  const response = { phase: state.phase, books: state.books, expectedVoters: state.expectedVoters, voteCount, voterNames, allVoted, alreadyReadCounts, alreadyReadNames, organizer: state.organizer || null, wishlist: state.wishlist || [] };
+  const response = { phase: state.phase, books: state.books, expectedVoters: state.expectedVoters, voteCount, voterNames, allVoted, alreadyReadCounts, alreadyReadNames, organizer: state.organizer || null, wishlist: state.wishlist || [], history: state.history || [], members, tieResolved: state.tieResolved, chosenBook: state.chosenBook, concludedAt: state.concludedAt };
 
   if (allVoted) {
     const voteCounts = {};
@@ -227,13 +231,19 @@ app.post('/api/vote', async (req, res) => {
     state.books.forEach(b => { voteCounts[b.title] = 0; });
     Object.values(state.votes).forEach(t => { voteCounts[t] = (voteCounts[t] || 0) + 1; });
     const maxVotes = Math.max(...Object.values(voteCounts));
-    state.books
-      .filter(b => voteCounts[b.title] === maxVotes)
-      .forEach(winner => {
-        if (!state.wishlist.some(w => w.title === winner.title)) {
-          state.wishlist.push({ title: winner.title, author: winner.author, pageCount: winner.pageCount, coverUrl: winner.coverUrl, addedBy: null, fromVote: true });
-        }
-      });
+    const winners = state.books.filter(b => voteCounts[b.title] === maxVotes);
+    winners.forEach(winner => {
+      if (!state.wishlist.some(w => w.title === winner.title)) {
+        state.wishlist.push({ title: winner.title, author: winner.author, pageCount: winner.pageCount, coverUrl: winner.coverUrl, addedBy: null, fromVote: true });
+      }
+    });
+    state.concludedAt = new Date().toISOString().split('T')[0];
+    if (winners.length === 1) {
+      if (!state.history) state.history = [];
+      const winner = winners[0];
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      state.history.push({ id, date: state.concludedAt, organizer: state.organizer || '', book: { title: winner.title, author: winner.author, pageCount: winner.pageCount, coverUrl: winner.coverUrl } });
+    }
   }
 
   await saveState();
@@ -276,6 +286,67 @@ app.post('/api/wishlist', async (req, res) => {
   res.json({ success: true });
 });
 
+app.post('/api/resolve-tie', async (req, res) => {
+  if (req.auth.user !== state.organizer) return res.status(403).json({ error: 'Alleen de organisator kan een gelijkspel oplossen.' });
+  const { bookTitle } = req.body;
+  if (!bookTitle) return res.status(400).json({ error: 'Boektitel vereist.' });
+
+  const voteCounts = {};
+  state.books.forEach(b => { voteCounts[b.title] = 0; });
+  Object.values(state.votes).forEach(t => { voteCounts[t] = (voteCounts[t] || 0) + 1; });
+  const maxVotes = Math.max(...Object.values(voteCounts));
+  const tiedBooks = state.books.filter(b => voteCounts[b.title] === maxVotes);
+
+  if (tiedBooks.length <= 1) return res.status(400).json({ error: 'Er is geen gelijkspel.' });
+  const chosen = tiedBooks.find(b => b.title === bookTitle);
+  if (!chosen) return res.status(400).json({ error: 'Ongeldig boek.' });
+
+  state.tieResolved = true;
+  state.chosenBook = { title: chosen.title, author: chosen.author, pageCount: chosen.pageCount, coverUrl: chosen.coverUrl };
+  if (!state.history) state.history = [];
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  state.history.push({ id, date: state.concludedAt || new Date().toISOString().split('T')[0], organizer: state.organizer || '', book: state.chosenBook });
+  await saveState();
+  res.json({ success: true });
+});
+
+app.post('/api/history', async (req, res) => {
+  const { date, organizer, book } = req.body;
+  if (!date) return res.status(400).json({ error: 'Date is required.' });
+  if (!organizer?.trim()) return res.status(400).json({ error: 'Organizer is required.' });
+  if (!book?.title?.trim()) return res.status(400).json({ error: 'Book title is required.' });
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const entry = { id, date, organizer: organizer.trim(), book: { title: book.title.trim(), author: (book.author || '').trim(), pageCount: book.pageCount || null, coverUrl: book.coverUrl || null } };
+  if (!state.history) state.history = [];
+  state.history.push(entry);
+  await saveState();
+  res.json({ success: true, entry });
+});
+
+app.put('/api/history/:id', async (req, res) => {
+  const { id } = req.params;
+  const { date, organizer, book } = req.body;
+  if (!state.history) return res.status(404).json({ error: 'Not found.' });
+  const idx = state.history.findIndex(h => h.id === id);
+  if (idx === -1) return res.status(404).json({ error: 'Not found.' });
+  if (!date) return res.status(400).json({ error: 'Date is required.' });
+  if (!organizer?.trim()) return res.status(400).json({ error: 'Organizer is required.' });
+  if (!book?.title?.trim()) return res.status(400).json({ error: 'Book title is required.' });
+  state.history[idx] = { id, date, organizer: organizer.trim(), book: { title: book.title.trim(), author: (book.author || '').trim(), pageCount: book.pageCount || null, coverUrl: book.coverUrl || null } };
+  await saveState();
+  res.json({ success: true });
+});
+
+app.delete('/api/history/:id', async (req, res) => {
+  const { id } = req.params;
+  if (!state.history) return res.status(404).json({ error: 'Not found.' });
+  const before = state.history.length;
+  state.history = state.history.filter(h => h.id !== id);
+  if (state.history.length === before) return res.status(404).json({ error: 'Not found.' });
+  await saveState();
+  res.json({ success: true });
+});
+
 app.post('/api/claim-organizer', async (req, res) => {
   if (state.organizer && state.organizer !== req.auth.user) {
     return res.status(409).json({ error: 'An organizer is already assigned.' });
@@ -286,19 +357,21 @@ app.post('/api/claim-organizer', async (req, res) => {
 });
 
 app.post('/api/take-organizer', async (req, res) => {
-  const wishlist = state.wishlist;
+  const { wishlist, history } = state;
   state = defaultState();
   state.organizer = req.auth.user;
   state.wishlist = wishlist;
+  state.history = history;
   await saveState();
   res.json({ success: true });
 });
 
 app.post('/api/reset', async (req, res) => {
-  const { organizer, wishlist } = state;
+  const { organizer, wishlist, history } = state;
   state = defaultState();
   state.organizer = organizer;
   state.wishlist = wishlist;
+  state.history = history;
   await saveState();
   res.json({ success: true });
 });

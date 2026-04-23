@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Book Club Vote</title>
+  <title>Read Between The Wines</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
@@ -89,6 +89,33 @@
       transition: opacity 0.15s;
     }
     .reset-btn:hover { opacity: 1; }
+
+    /* ── Currently reading banner ── */
+    #current-book-banner {
+      background: var(--brown);
+      border-bottom: 1px solid rgba(240,224,176,0.12);
+    }
+    #current-book-inner {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      color: var(--light-gold);
+      font-size: 0.85rem;
+    }
+    #current-book-inner img {
+      width: 28px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 2px;
+      flex-shrink: 0;
+      opacity: 0.9;
+    }
+    .cb-label { opacity: 0.6; white-space: nowrap; }
+    .cb-title { font-weight: 600; }
+    .cb-author { opacity: 0.7; margin-left: 0.25rem; }
 
     /* ── Layout ── */
     main {
@@ -777,6 +804,79 @@
     .wl-card-btn:hover:not(:disabled) { background: var(--muted-gold); border-color: var(--gold); color: var(--mid-brown); }
     .wl-card-btn.on-wishlist { color: var(--mid-brown); border-color: var(--gold); background: var(--muted-gold); cursor: default; }
 
+    /* ── History panel ── */
+    #history-panel {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 4rem;
+    }
+    .hist-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .hist-form-grid .form-group { margin-bottom: 0; }
+    .hist-form-grid input[type="date"],
+    .hist-form-grid input[type="text"] {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.88rem;
+      font-family: inherit;
+      color: var(--brown);
+      background: var(--paper);
+      box-sizing: border-box;
+    }
+    .hist-form-grid input:focus,
+    .hist-form-grid select:focus { outline: none; border-color: var(--gold); }
+    .hist-form-grid select {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.88rem;
+      font-family: inherit;
+      color: var(--brown);
+      background: var(--paper);
+      box-sizing: border-box;
+      appearance: none;
+      cursor: pointer;
+    }
+    .hist-list { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; }
+    .hist-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--paper);
+    }
+    .hist-cover { width: 34px; height: 50px; object-fit: cover; border-radius: 3px; flex-shrink: 0; }
+    .hist-cover-placeholder { width: 34px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .hist-info { flex: 1; min-width: 0; }
+    .hist-book-title { font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hist-book-author { font-size: 0.78rem; color: var(--gray); margin-top: 0.1rem; }
+    .hist-meta { font-size: 0.72rem; color: var(--gray); margin-top: 0.25rem; }
+    .hist-actions { display: flex; gap: 0.25rem; flex-shrink: 0; align-items: center; }
+    .hist-edit-btn { background: none; border: 1px solid var(--border); cursor: pointer; color: var(--gray); font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-family: inherit; line-height: 1.4; }
+    .hist-edit-btn:hover { color: var(--mid-brown); border-color: var(--gold); background: var(--muted-gold); }
+    .hist-remove-btn { background: none; border: none; cursor: pointer; color: var(--gray); font-size: 1.1rem; line-height: 1; padding: 0.2rem 0.3rem; border-radius: 4px; }
+    .hist-remove-btn:hover { color: var(--brown); background: var(--border); }
+    .hist-section-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--mid-brown);
+      opacity: 0.7;
+      margin: 1rem 0 0.4rem;
+    }
+    .hist-section-title:first-child { margin-top: 0; }
+    .hist-item-current {
+      border-color: var(--gold);
+      background: var(--muted-gold);
+    }
+    .hist-item-current .hist-book-title { font-size: 0.95rem; }
+
     /* ── Hamburger ── */
     .hamburger-btn {
       background: transparent;
@@ -813,7 +913,7 @@
       transition: max-height 0.25s ease, padding 0.25s ease;
     }
     .nav-menu.open {
-      max-height: 200px;
+      max-height: 300px;
       padding: 0.25rem 0;
     }
     .nav-item {
@@ -851,6 +951,7 @@
       /* Layout */
       main { padding: 1.25rem 1rem 3rem; }
       #wishlist-panel { padding: 1.25rem 1rem 3rem; }
+      #history-panel { padding: 1.25rem 1rem 3rem; }
 
       /* Cards */
       .card { padding: 1.25rem; border-radius: 10px; }
@@ -908,12 +1009,12 @@
 
 <header>
   <div>
-    <div class="header-title">📚 Book Club Vote</div>
+    <div class="header-title">📚 Read Between The Wines</div>
   </div>
   <div class="header-right">
     <span class="header-user" id="header-user"></span>
-    <span class="organizer-badge" id="organizer-badge" style="display:none">Organizer</span>
-    <button class="reset-btn" id="reset-btn" style="display:none">↺ New vote</button>
+    <span class="organizer-badge" id="organizer-badge" style="display:none">Organisator</span>
+    <button class="reset-btn" id="reset-btn" style="display:none">↺ Nieuwe ronde</button>
     <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
@@ -921,9 +1022,14 @@
 </header>
 
 <nav class="nav-menu" id="nav-menu" role="navigation">
-  <button class="nav-item active" data-nav="home">Pick the next book</button>
-  <button class="nav-item" data-nav="wishlist">Wishlist</button>
+  <button class="nav-item active" data-nav="home">Kies het volgende boek</button>
+  <button class="nav-item" data-nav="wishlist">Verlanglijst</button>
+  <button class="nav-item" data-nav="history">Geschiedenis</button>
 </nav>
+
+<div id="current-book-banner" style="display:none">
+  <div id="current-book-inner"></div>
+</div>
 
 <main id="main-content">
 
@@ -932,11 +1038,11 @@
     <div class="card">
       <div class="landing-hero">
         <div class="emoji">📖</div>
-        <h2 id="role-welcome">Welcome</h2>
-        <p class="subtitle">No organizer has been assigned yet for this round.</p>
+        <h2 id="role-welcome">Welkom</h2>
+        <p class="subtitle">Er is nog geen organisator aangesteld voor deze ronde.</p>
       </div>
-      <button class="btn btn-gold" id="claim-organizer-btn">I'm the organizer</button>
-      <button class="btn btn-secondary" id="choose-voter-btn" style="margin-top:0.75rem">I'll vote</button>
+      <button class="btn btn-gold" id="claim-organizer-btn">Ik ben de organisator</button>
+      <button class="btn btn-secondary" id="choose-voter-btn" style="margin-top:0.75rem">Ik stem</button>
     </div>
   </div>
 
@@ -945,37 +1051,37 @@
     <div class="card">
       <div class="landing-hero">
         <div class="emoji">📖</div>
-        <h2>Waiting for the organizer</h2>
+        <h2>Wachten op de organisator</h2>
         <p class="subtitle" style="margin-bottom:0">
-          The organizer hasn't opened the vote yet.<br>
-          This page will update automatically once books are added.
+          De organisator heeft de stemming nog niet geopend.<br>
+          Deze pagina wordt automatisch bijgewerkt zodra boeken zijn toegevoegd.
         </p>
       </div>
-      <p class="hint" style="margin-top:1.5rem">Want to run this round? <button class="link-btn" data-take-organizer>Become the organizer &rarr;</button></p>
+      <p class="hint" style="margin-top:1.5rem">Wil je deze ronde leiden? <button class="link-btn" data-take-organizer>Word de organisator &rarr;</button></p>
     </div>
   </div>
 
   <!-- ── SETUP VIEW (organizer only) ── -->
   <div id="setup-view" class="view">
     <div class="card">
-      <h2>Set up the vote</h2>
-      <p class="subtitle">Add up to 3 book suggestions, then share the link with your club so they can vote.</p>
+      <h2>Stemming starten</h2>
+      <p class="subtitle">Voeg 3 boeken toe en deel de link met je club om te stemmen.</p>
 
       <div id="setup-error" class="alert alert-error"></div>
 
       <div class="book-input-group">
         <div class="book-label">
-          <span><span class="book-number">1</span> First book</span>
-          <button class="lookup-btn" data-lookup="1">Look up</button>
+          <span><span class="book-number">1</span> Eerste boek</span>
+          <button class="lookup-btn" data-lookup="1">Opzoeken</button>
         </div>
         <div class="input-row">
           <div class="form-group" style="margin-bottom:0">
-            <label>Title</label>
-            <input type="text" id="b1-title" placeholder="e.g. Dune" />
+            <label>Titel</label>
+            <input type="text" id="b1-title" placeholder="bijv. Dune" />
           </div>
           <div class="form-group" style="margin-bottom:0">
-            <label>Author</label>
-            <input type="text" id="b1-author" placeholder="e.g. Frank Herbert" />
+            <label>Auteur</label>
+            <input type="text" id="b1-author" placeholder="bijv. Frank Herbert" />
           </div>
         </div>
         <div id="b1-preview" class="lookup-preview" style="display:none"></div>
@@ -983,17 +1089,17 @@
 
       <div class="book-input-group">
         <div class="book-label">
-          <span><span class="book-number">2</span> Second book</span>
-          <button class="lookup-btn" data-lookup="2">Look up</button>
+          <span><span class="book-number">2</span> Tweede boek</span>
+          <button class="lookup-btn" data-lookup="2">Opzoeken</button>
         </div>
         <div class="input-row">
           <div class="form-group" style="margin-bottom:0">
-            <label>Title</label>
-            <input type="text" id="b2-title" placeholder="e.g. Piranesi" />
+            <label>Titel</label>
+            <input type="text" id="b2-title" placeholder="bijv. Piranesi" />
           </div>
           <div class="form-group" style="margin-bottom:0">
-            <label>Author</label>
-            <input type="text" id="b2-author" placeholder="e.g. Susanna Clarke" />
+            <label>Auteur</label>
+            <input type="text" id="b2-author" placeholder="bijv. Susanna Clarke" />
           </div>
         </div>
         <div id="b2-preview" class="lookup-preview" style="display:none"></div>
@@ -1001,37 +1107,37 @@
 
       <div class="book-input-group">
         <div class="book-label">
-          <span><span class="book-number">3</span> Third book</span>
-          <button class="lookup-btn" data-lookup="3">Look up</button>
+          <span><span class="book-number">3</span> Derde boek</span>
+          <button class="lookup-btn" data-lookup="3">Opzoeken</button>
         </div>
         <div class="input-row">
           <div class="form-group" style="margin-bottom:0">
-            <label>Title</label>
-            <input type="text" id="b3-title" placeholder="e.g. Normal People" />
+            <label>Titel</label>
+            <input type="text" id="b3-title" placeholder="bijv. Normal People" />
           </div>
           <div class="form-group" style="margin-bottom:0">
-            <label>Author</label>
-            <input type="text" id="b3-author" placeholder="e.g. Sally Rooney" />
+            <label>Auteur</label>
+            <input type="text" id="b3-author" placeholder="bijv. Sally Rooney" />
           </div>
         </div>
         <div id="b3-preview" class="lookup-preview" style="display:none"></div>
       </div>
 
-      <button class="btn btn-gold" id="setup-btn">Open voting &rarr;</button>
+      <button class="btn btn-gold" id="setup-btn">Stemming openen &rarr;</button>
     </div>
   </div>
 
   <!-- ── ADMIN VIEW (organizer, voting in progress) ── -->
   <div id="admin-view" class="view">
     <div class="card">
-      <h2>Vote in progress</h2>
-      <p class="subtitle">Waiting for everyone to vote. Results will be revealed once all votes are in.</p>
+      <h2>Stemming bezig</h2>
+      <p class="subtitle">Wachten tot iedereen heeft gestemd. Resultaten worden onthuld zodra alle stemmen zijn uitgebracht.</p>
 
       <div id="admin-books" class="books-display"></div>
 
       <div class="progress-box">
         <div class="progress-row">
-          <span>Votes received</span>
+          <span>Stemmen ontvangen</span>
           <span id="admin-count">0 / 0</span>
         </div>
         <div class="progress-track">
@@ -1040,9 +1146,9 @@
         <div class="voter-chips" id="admin-voter-chips"></div>
       </div>
 
-      <p class="hint" style="margin-top:1.25rem">This page refreshes automatically.</p>
+      <p class="hint" style="margin-top:1.25rem">Deze pagina ververst automatisch.</p>
 
-      <button class="edit-books-btn" id="edit-books-btn">✎ Edit books &amp; reset votes</button>
+      <button class="edit-books-btn" id="edit-books-btn">✎ Boeken bewerken &amp; stemmen resetten</button>
     </div>
   </div>
 
@@ -1052,7 +1158,7 @@
 
       <!-- Step 2: books -->
       <div id="vote-step-2">
-        <h2>Cast your vote</h2>
+        <h2>Breng je stem uit</h2>
         <p class="subtitle" id="vote-subtitle"></p>
 
         <div class="my-vote-pill" id="voting-as-pill" style="margin-bottom:1.25rem"></div>
@@ -1061,14 +1167,14 @@
 
         <div id="books-grid" class="books-grid"></div>
 
-        <button class="btn btn-gold" id="vote-btn">Submit vote</button>
+        <button class="btn btn-gold" id="vote-btn">Stem uitbrengen</button>
 
         <div id="report-read-row" style="margin-top:0.75rem;display:none">
-          <button class="btn btn-secondary" id="report-read-btn">I've read these — notify the organizer</button>
+          <button class="btn btn-secondary" id="report-read-btn">Ik heb deze boeken al gelezen - verstuur naar de organisator</button>
           <div id="report-read-success" class="alert alert-success" style="display:none;margin-top:0.5rem"></div>
         </div>
 
-        <p class="hint" style="margin-top:1rem">Want to run this round? <button class="link-btn" data-take-organizer>Become the organizer &rarr;</button></p>
+        <p class="hint" style="margin-top:1rem">Wil je deze ronde leiden? <button class="link-btn" data-take-organizer>Word de organisator &rarr;</button></p>
 
       </div>
 
@@ -1076,9 +1182,9 @@
       <div id="vote-step-waiting" style="display:none">
         <div class="waiting-hero">
           <div class="emoji">&#128218;</div>
-          <h2>Waiting for new books</h2>
+          <h2>Wachten op nieuwe boeken</h2>
           <p class="subtitle" style="margin-bottom:0">
-            The organizer has been notified. This page will update automatically once the book list is refreshed<span class="dots"><span>.</span><span>.</span><span>.</span></span>
+            De organisator is op de hoogte gesteld. Deze pagina wordt automatisch bijgewerkt zodra de boekenlijst is vernieuwd<span class="dots"><span>.</span><span>.</span><span>.</span></span>
           </p>
         </div>
       </div>
@@ -1091,14 +1197,14 @@
     <div class="card">
       <div class="waiting-hero">
         <div class="emoji">&#9203;</div>
-        <h2>Your vote is in!</h2>
-        <p class="subtitle" style="margin-bottom:0">Waiting for the others<span class="dots"><span>.</span><span>.</span><span>.</span></span></p>
+        <h2>Je stem is uitgebracht!</h2>
+        <p class="subtitle" style="margin-bottom:0">Wachten op de anderen<span class="dots"><span>.</span><span>.</span><span>.</span></span></p>
         <div class="my-vote-pill" id="my-vote-pill" style="display:none"></div>
       </div>
 
       <div class="progress-box">
         <div class="progress-row">
-          <span>Votes received</span>
+          <span>Stemmen ontvangen</span>
           <span id="waiting-count">0 / 0</span>
         </div>
         <div class="progress-track">
@@ -1107,8 +1213,26 @@
         <div class="voter-chips" id="voter-chips"></div>
       </div>
 
-      <p class="hint">Results are hidden until everyone has voted. This page refreshes automatically.</p>
-      <p class="hint" style="margin-top:0.5rem">Want to run this round? <button class="link-btn" data-take-organizer>Become the organizer &rarr;</button></p>
+      <p class="hint">Resultaten zijn verborgen totdat iedereen heeft gestemd. Deze pagina ververst automatisch.</p>
+      <p class="hint" style="margin-top:0.5rem">Wil je deze ronde leiden? <button class="link-btn" data-take-organizer>Word de organisator &rarr;</button></p>
+    </div>
+  </div>
+
+  <!-- ── TIE-BREAKER VIEW (organizer only, when votes are tied) ── -->
+  <div id="tie-breaker-view" class="view">
+    <div class="winner-banner">
+      <div class="crown">🤝</div>
+      <div class="winner-label">Gelijkspel — jij hebt de beslissende stem</div>
+      <div class="winner-title" id="tie-breaker-title"></div>
+    </div>
+
+    <div class="card">
+      <h2>Kies het winnende boek</h2>
+      <p class="subtitle" id="tie-breaker-sub"></p>
+
+      <div id="tie-books-grid" class="books-grid"></div>
+
+      <button class="btn btn-gold" id="tie-confirm-btn" disabled>Bevestig keuze</button>
     </div>
   </div>
 
@@ -1116,27 +1240,27 @@
   <div id="results-view" class="view">
     <div class="winner-banner">
       <div class="crown" id="winner-crown">&#128081;</div>
-      <div class="winner-label" id="winner-label">Next book we're reading</div>
+      <div class="winner-label" id="winner-label">Ons volgende boek</div>
       <div class="winner-title" id="winner-title">—</div>
       <div class="winner-author" id="winner-author"></div>
     </div>
 
     <div class="card">
-      <h2>The results</h2>
+      <h2>De resultaten</h2>
       <p class="subtitle" id="results-sub"></p>
 
       <div class="share-area" id="share-area" style="display:none">
-        <span>Share:</span>
+        <span>Delen:</span>
         <input type="text" id="share-url" readonly />
-        <button class="copy-btn" id="copy-btn">Copy link</button>
+        <button class="copy-btn" id="copy-btn">Link kopiëren</button>
       </div>
 
       <div id="results-books"></div>
       <div id="breakdown" class="breakdown"></div>
 
       <p class="organizer-link" style="margin-top:2rem">
-        Are you the organizer?
-        <button class="link-btn" data-new-vote>Start a new vote &rarr;</button>
+        Ben jij de organisator?
+        <button class="link-btn" data-new-vote>Nieuwe stemming starten &rarr;</button>
       </p>
     </div>
   </div>
@@ -1146,32 +1270,71 @@
 <section id="wishlist-panel" style="display:none">
   <div class="wishlist-inner">
     <div class="wishlist-header">
-      <h3 class="wishlist-title">Reading wishlist</h3>
-      <button class="link-btn" id="wl-toggle-btn">+ Add book</button>
+      <h3 class="wishlist-title">Ik wil deze graag hebben</h3>
+      <button class="link-btn" id="wl-toggle-btn">+ Boek toevoegen</button>
     </div>
 
     <div id="wl-add-form" style="display:none">
       <div id="wl-error" class="alert alert-error" style="margin-bottom:0.75rem;display:none"></div>
       <div class="wl-form-row">
-        <input type="text" id="wl-title" placeholder="Title" />
-        <input type="text" id="wl-author" placeholder="Author (optional)" />
-        <button class="lookup-btn" data-lookup="wl">Look up</button>
+        <input type="text" id="wl-title" placeholder="Titel" />
+        <input type="text" id="wl-author" placeholder="Auteur (optioneel)" />
+        <button class="lookup-btn" data-lookup="wl">Opzoeken</button>
       </div>
       <div id="wl-preview" class="lookup-preview" style="display:none;margin-top:0.5rem"></div>
-      <button class="btn btn-gold" id="wl-submit-btn" style="margin-top:0.75rem">Add to wishlist</button>
+      <button class="btn btn-gold" id="wl-submit-btn" style="margin-top:0.75rem">Aan verlanglijst toevoegen</button>
     </div>
 
     <div id="wl-list" class="wl-list"></div>
-    <p id="wl-empty" class="wl-empty" style="display:none">No books yet — add one above or win a vote!</p>
+    <p id="wl-empty" class="wl-empty" style="display:none">Nog geen boeken in de wenslijst</p>
+  </div>
+</section>
+
+<section id="history-panel" style="display:none">
+  <div class="wishlist-inner">
+    <div class="wishlist-header">
+      <h3 class="wishlist-title">Geschiedenis</h3>
+      <button class="link-btn" id="hist-toggle-btn">+ Item toevoegen</button>
+    </div>
+
+    <div id="hist-add-form" style="display:none">
+      <div id="hist-error" class="alert alert-error" style="margin-bottom:0.75rem;display:none"></div>
+      <div class="hist-form-grid">
+        <div class="form-group">
+          <label>Datum</label>
+          <input type="date" id="hist-date" />
+        </div>
+        <div class="form-group">
+          <label>Organisator</label>
+          <select id="hist-organizer"></select>
+        </div>
+      </div>
+      <div class="wl-form-row" style="margin-top:0.5rem">
+        <input type="text" id="hist-title" placeholder="Boektitel" />
+        <input type="text" id="hist-author" placeholder="Auteur (optioneel)" />
+        <button class="lookup-btn" data-lookup="hist">Opzoeken</button>
+      </div>
+      <div id="hist-preview" class="lookup-preview" style="display:none;margin-top:0.5rem"></div>
+      <div style="display:flex;gap:0.5rem;margin-top:0.75rem;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-gold" id="hist-submit-btn">Item toevoegen</button>
+        <button class="link-btn" id="hist-cancel-btn" style="display:none">Annuleren</button>
+      </div>
+    </div>
+
+    <div id="hist-list" class="hist-list"></div>
+    <p id="hist-empty" class="wl-empty" style="display:none">Nog geen geschiedenis — voeg je eerste item toe!</p>
   </div>
 </section>
 
 <script>
   let pollTimer = null;
   let selectedBook = null;
+  let selectedTieBook = null;
   let currentUser = '';
   let pendingVoterName = '';
   let wishlistMeta = {};
+  let histMeta = {};
+  let editingHistId = null;
   let waitingForBookUpdate = false;
   let reportedBookTitles = null;
   const bookMeta = {}; // { 1: { pageCount, coverUrl }, 2: ..., 3: ... }
@@ -1218,11 +1381,27 @@
 
   // ── Fetch & render ─────────────────────────────────────────────────────────
 
+  function renderCurrentBook(state) {
+    const banner = document.getElementById('current-book-banner');
+    const inner = document.getElementById('current-book-inner');
+    const history = state.history || [];
+    if (!history.length) { banner.style.display = 'none'; return; }
+    const latest = history.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
+    const book = latest.book || {};
+    const coverHtml = book.coverUrl
+      ? `<img src="${esc(book.coverUrl)}" alt="" />`
+      : '';
+    inner.innerHTML = `${coverHtml}<span class="cb-label">Jullie lezen nu:&nbsp;</span><span class="cb-title">${esc(book.title || '')}</span>${book.author ? `<span class="cb-author">— ${esc(book.author)}</span>` : ''}`;
+    banner.style.display = '';
+  }
+
   async function fetchState() {
     const res = await fetch('/api/state');
     const state = await res.json();
     window._lastState = state;
     renderWishlist(state);
+    renderHistory(state);
+    renderCurrentBook(state);
     render(state);
   }
 
@@ -1236,9 +1415,25 @@
     const hasVoted = currentUser && state.voterNames && state.voterNames.includes(currentUser);
 
     if (state.allVoted) {
-      showView('results-view');
-      renderResults(state);
-      stopPolling();
+      const counts = state.voteCounts || {};
+      const maxVotes = Math.max(...Object.values(counts), 0);
+      const isTie = state.books.filter(b => (counts[b.title] || 0) === maxVotes).length > 1;
+
+      if (isTie && !state.tieResolved) {
+        if (amOrganizer) {
+          showView('tie-breaker-view');
+          renderTieBreaker(state);
+          stopPolling();
+        } else {
+          showView('results-view');
+          renderResults(state);
+          startPolling();
+        }
+      } else {
+        showView('results-view');
+        renderResults(state);
+        stopPolling();
+      }
       return;
     }
 
@@ -1253,7 +1448,7 @@
       }
     } else if (!state.organizer && !choseVoter) {
       showView('role-view');
-      document.getElementById('role-welcome').textContent = `Welcome, ${currentUser}`;
+      document.getElementById('role-welcome').textContent = `Welkom, ${currentUser}`;
       stopPolling();
     } else {
       if (state.phase === 'setup') {
@@ -1290,15 +1485,16 @@
 
     const i = btn.dataset.lookup;
     const isWl = i === 'wl';
-    const titleEl = document.getElementById(isWl ? 'wl-title' : `b${i}-title`);
-    const authorEl = document.getElementById(isWl ? 'wl-author' : `b${i}-author`);
+    const isHist = i === 'hist';
+    const titleEl = document.getElementById(isWl ? 'wl-title' : isHist ? 'hist-title' : `b${i}-title`);
+    const authorEl = document.getElementById(isWl ? 'wl-author' : isHist ? 'hist-author' : `b${i}-author`);
     const title = titleEl.value.trim();
     const author = authorEl.value.trim();
     if (!title) return;
 
     btn.disabled = true;
     btn.textContent = '…';
-    const preview = document.getElementById(isWl ? 'wl-preview' : `b${i}-preview`);
+    const preview = document.getElementById(isWl ? 'wl-preview' : isHist ? 'hist-preview' : `b${i}-preview`);
     preview.style.display = 'none';
 
     try {
@@ -1318,11 +1514,11 @@
       if (!data) throw lastErr;
 
       if (!data.found) {
-        preview.innerHTML = `<span class="lookup-not-found">No results found for "${esc(title)}".</span>`;
-        if (isWl) wishlistMeta = {}; else bookMeta[i] = {};
+        preview.innerHTML = `<span class="lookup-not-found">Geen resultaten gevonden voor "${esc(title)}".</span>`;
+        if (isWl) wishlistMeta = {}; else if (isHist) histMeta = {}; else bookMeta[i] = {};
       } else {
         if (!author && data.author) authorEl.value = data.author;
-        const pages = data.pageCount ? `${data.pageCount} pages` : 'page count unknown';
+        const pages = data.pageCount ? `${data.pageCount} pagina's` : 'aantal pagina\'s onbekend';
         const coverHtml = data.coverUrl
           ? `<img class="lookup-cover" src="${esc(data.coverUrl)}" alt="" />`
           : `<span style="font-size:1.5rem;flex-shrink:0">📖</span>`;
@@ -1333,17 +1529,18 @@
             <div class="lookup-found-meta">${data.author ? esc(data.author) + ' · ' : ''}${pages}</div>
           </div>`;
         if (isWl) wishlistMeta = { pageCount: data.pageCount, coverUrl: data.coverUrl };
+        else if (isHist) histMeta = { pageCount: data.pageCount, coverUrl: data.coverUrl };
         else bookMeta[i] = { pageCount: data.pageCount, coverUrl: data.coverUrl };
       }
       preview.style.display = 'flex';
     } catch {
-      preview.innerHTML = `<span class="lookup-not-found">Lookup failed — check your connection.</span>`;
+      preview.innerHTML = `<span class="lookup-not-found">Opzoeken mislukt — controleer je verbinding.</span>`;
       preview.style.display = 'flex';
-      if (isWl) wishlistMeta = {}; else bookMeta[i] = {};
+      if (isWl) wishlistMeta = {}; else if (isHist) histMeta = {}; else bookMeta[i] = {};
     }
 
     btn.disabled = false;
-    btn.textContent = 'Look up';
+    btn.textContent = 'Opzoeken';
   });
 
   // Enter on a title input triggers lookup for that book
@@ -1367,7 +1564,7 @@
 
   document.addEventListener('click', async e => {
     if (!e.target.closest('[data-take-organizer]')) return;
-    if (!confirm('Become the organizer? The current books and all votes will be cleared.')) return;
+    if (!confirm('Word de organisator? De huidige boeken en alle stemmen worden gewist.')) return;
     const res = await fetch('/api/take-organizer', { method: 'POST' });
     if (res.ok) {
       localStorage.removeItem('bc_role');
@@ -1386,7 +1583,7 @@
       coverUrl: bookMeta[i]?.coverUrl || null,
     })).filter(b => b.title);
 
-    if (books.length < 3) return showError('setup-error', 'Please enter all 3 book titles.');
+    if (books.length < 3) return showError('setup-error', 'Voer alle 3 boektitels in.');
 
     if (editMode) {
       const res = await fetch('/api/edit-books', {
@@ -1397,8 +1594,8 @@
       const data = await res.json();
       if (!res.ok) return showError('setup-error', data.error);
       editMode = false;
-      document.getElementById('setup-view').querySelector('h2').textContent = 'Set up the vote';
-      document.getElementById('setup-btn').textContent = 'Open voting →';
+      document.getElementById('setup-view').querySelector('h2').textContent = 'Stemming instellen';
+      document.getElementById('setup-btn').textContent = 'Stemming openen →';
     } else {
       const res = await fetch('/api/setup', {
         method: 'POST',
@@ -1413,7 +1610,7 @@
   });
 
   document.getElementById('edit-books-btn').addEventListener('click', () => {
-    if (!confirm('Edit the book list? All current votes will be reset.')) return;
+    if (!confirm('Boekenlijst bewerken? Alle huidige stemmen worden gereset.')) return;
 
     editMode = true;
     stopPolling();
@@ -1427,7 +1624,7 @@
       const preview = document.getElementById(`b${i}-preview`);
       if (book?.pageCount || book?.coverUrl) {
         bookMeta[i] = { pageCount: book.pageCount, coverUrl: book.coverUrl };
-        const pages = book.pageCount ? `${book.pageCount} pages` : '';
+        const pages = book.pageCount ? `${book.pageCount} pagina's` : '';
         const coverHtml = book.coverUrl
           ? `<img class="lookup-cover" src="${esc(book.coverUrl)}" alt="" />`
           : `<span style="font-size:1.5rem;flex-shrink:0">📖</span>`;
@@ -1443,8 +1640,8 @@
     });
 
     // Adapt form for edit mode
-    document.getElementById('setup-view').querySelector('h2').textContent = 'Edit books';
-    document.getElementById('setup-btn').textContent = 'Save & reset votes';
+    document.getElementById('setup-view').querySelector('h2').textContent = 'Boeken bewerken';
+    document.getElementById('setup-btn').textContent = 'Opslaan & stemmen resetten';
     hideError('setup-error');
     showView('setup-view');
   });
@@ -1457,7 +1654,7 @@
       const names = state.alreadyReadNames?.[book.title] || [];
       const readInfo = names.length === 0 ? ''
         : `<div class="already-read-info" style="margin-top:0.5rem">
-             Already read by: ${names.map(n => esc(n)).join(', ')}
+             Al gelezen door: ${names.map(n => esc(n)).join(', ')}
            </div>`;
       return `
         <div class="book-card">
@@ -1493,14 +1690,14 @@
     selectedBook = null;
     pendingVoterName = currentUser;
     hideError('vote-error');
-    document.getElementById('voting-as-pill').textContent = `Voting as: ${currentUser}`;
+    document.getElementById('voting-as-pill').textContent = `Stemmen als: ${currentUser}`;
 
     // Pre-render books for step 2
     const grid = document.getElementById('books-grid');
     grid.innerHTML = state.books.map(book => {
       const readCount = state.alreadyReadCounts?.[book.title] || 0;
-      const readLabel = readCount === 1 ? '1 member already read this'
-                      : readCount > 1  ? `${readCount} members already read this`
+      const readLabel = readCount === 1 ? '1 lid heeft dit al gelezen'
+                      : readCount > 1  ? `${readCount} leden hebben dit al gelezen`
                       : '';
       const onWishlist = (state.wishlist || []).some(w => w.title === book.title);
       return `
@@ -1514,9 +1711,9 @@
           ${readLabel ? `<div class="already-read-info">${readLabel}</div>` : ''}
           <label class="already-read-label" onclick="event.stopPropagation()">
             <input type="checkbox" class="already-read-cb" data-book="${esc(book.title)}" onclick="event.stopPropagation()" />
-            I've already read this
+            Ik heb dit al gelezen
           </label>
-          <button class="wl-card-btn${onWishlist ? ' on-wishlist' : ''}" data-wl-book="${esc(book.title)}" ${onWishlist ? 'disabled' : ''}>${onWishlist ? '✓ On wishlist' : '+ Wishlist'}</button>
+          <button class="wl-card-btn${onWishlist ? ' on-wishlist' : ''}" data-wl-book="${esc(book.title)}" ${onWishlist ? 'disabled' : ''}>${onWishlist ? '✓ Op verlanglijst' : '+ Verlanglijst'}</button>
         </div>
       `;
     }).join('');
@@ -1540,7 +1737,7 @@
     });
 
     document.getElementById('vote-subtitle').textContent =
-      `Which book should we read next? (${state.voteCount} of ${state.expectedVoters} votes in)`;
+      `Welk boek lezen we hierna? (${state.voteCount} van ${state.expectedVoters} stemmen binnen)`;
   }
 
 
@@ -1567,7 +1764,7 @@
 
   document.getElementById('vote-btn').addEventListener('click', async () => {
     hideError('vote-error');
-    if (!selectedBook) return showError('vote-error', 'Please select a book.');
+    if (!selectedBook) return showError('vote-error', 'Selecteer een boek.');
 
     const alreadyRead = [...document.querySelectorAll('.already-read-cb:checked')].map(cb => cb.dataset.book);
 
@@ -1597,13 +1794,82 @@
 
     const pill = document.getElementById('my-vote-pill');
     if (currentUser && state.voterNames.includes(currentUser)) {
-      pill.textContent = `You voted as: ${currentUser}`;
+      pill.textContent = `Je hebt gestemd als: ${currentUser}`;
       pill.style.display = 'inline-flex';
     } else {
       pill.style.display = 'none';
     }
   }
 
+
+  // ── Tie-breaker view ───────────────────────────────────────────────────────
+
+  function renderTieBreaker(state) {
+    const counts = state.voteCounts || {};
+    const maxVotes = Math.max(...Object.values(counts), 0);
+    const tiedBooks = state.books.filter(b => (counts[b.title] || 0) === maxVotes);
+    const tiedKey = tiedBooks.map(b => b.title).sort().join('|');
+
+    document.getElementById('tie-breaker-title').textContent = tiedBooks.map(b => b.title).join(' & ');
+    document.getElementById('tie-breaker-sub').textContent =
+      `${tiedBooks.length} boeken staan gelijk op ${maxVotes} stem${maxVotes !== 1 ? 'men' : ''}. Kies het boek dat jullie gaan lezen.`;
+
+    const confirmBtn = document.getElementById('tie-confirm-btn');
+    const grid = document.getElementById('tie-books-grid');
+
+    // Only rebuild cards when the tied books actually change (avoids resetting selection on re-render)
+    if (grid.dataset.tiedKey !== tiedKey) {
+      selectedTieBook = null;
+      grid.dataset.tiedKey = tiedKey;
+      grid.innerHTML = tiedBooks.map(book => `
+        <div class="book-card" data-title="${esc(book.title)}" tabindex="0" role="button">
+          ${book.coverUrl
+            ? `<img class="book-card-cover" src="${esc(book.coverUrl)}" alt="" />`
+            : `<div class="book-icon">📖</div>`}
+          <div class="book-card-title">${esc(book.title)}</div>
+          ${book.author ? `<div class="book-card-author">${esc(book.author)}</div>` : ''}
+          ${book.pageCount ? `<div class="book-card-pages">${book.pageCount} pagina's</div>` : ''}
+        </div>
+      `).join('');
+
+      grid.querySelectorAll('.book-card').forEach(card => {
+        const select = e => {
+          grid.querySelectorAll('.book-card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          selectedTieBook = card.dataset.title;
+          confirmBtn.disabled = false;
+        };
+        card.addEventListener('click', select);
+        card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') select(e); });
+      });
+    }
+
+    // Restore selection if already picked (survives re-renders)
+    confirmBtn.disabled = !selectedTieBook;
+    if (selectedTieBook) {
+      grid.querySelectorAll('.book-card').forEach(c => {
+        c.classList.toggle('selected', c.dataset.title === selectedTieBook);
+      });
+    }
+
+    confirmBtn.onclick = async () => {
+      if (!selectedTieBook) return;
+      confirmBtn.disabled = true;
+      const res = await fetch('/api/resolve-tie', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookTitle: selectedTieBook }),
+      });
+      if (res.ok) {
+        selectedTieBook = null;
+        fetchState();
+      } else {
+        const data = await res.json();
+        confirmBtn.disabled = false;
+        alert(data.error);
+      }
+    };
+  }
 
   // ── Results view ───────────────────────────────────────────────────────────
 
@@ -1613,21 +1879,27 @@
     const winners = state.books.filter(b => (counts[b.title] || 0) === maxVotes);
     const isTie = winners.length > 1;
 
-    if (isTie) {
+    if (isTie && state.tieResolved && state.chosenBook) {
+      const w = state.chosenBook;
+      document.getElementById('winner-crown').textContent = '👑';
+      document.getElementById('winner-label').textContent = "Ons volgende boek";
+      document.getElementById('winner-title').textContent = w.title;
+      document.getElementById('winner-author').textContent = w.author ? `door ${w.author}` : '';
+    } else if (isTie) {
       document.getElementById('winner-crown').textContent = '🤝';
-      document.getElementById('winner-label').textContent = "It's a tie!";
+      document.getElementById('winner-label').textContent = "Gelijkspel — de organisator kiest...";
       document.getElementById('winner-title').textContent = winners.map(w => w.title).join(' & ');
       document.getElementById('winner-author').textContent = '';
     } else {
       const w = winners[0];
       document.getElementById('winner-crown').textContent = '👑';
-      document.getElementById('winner-label').textContent = "Next book we're reading";
+      document.getElementById('winner-label').textContent = "Ons volgende boek";
       document.getElementById('winner-title').textContent = w.title;
-      document.getElementById('winner-author').textContent = w.author ? `by ${w.author}` : '';
+      document.getElementById('winner-author').textContent = w.author ? `door ${w.author}` : '';
     }
 
     document.getElementById('results-sub').textContent =
-      `${state.voteCount} member${state.voteCount !== 1 ? 's' : ''} voted`;
+      `${state.voteCount} ${state.voteCount !== 1 ? 'leden' : 'lid'} gestemd`;
 
     document.getElementById('share-area').style.display = 'flex';
     document.getElementById('share-url').value = window.location.href;
@@ -1645,7 +1917,7 @@
               <span class="result-book-title">${esc(book.title)}</span>
               ${book.author ? `<span class="result-book-author"> &middot; ${esc(book.author)}</span>` : ''}
             </div>
-            <div class="result-tally">${votes} vote${votes !== 1 ? 's' : ''} &middot; ${Math.round(pct)}%</div>
+            <div class="result-tally">${votes} stem${votes !== 1 ? 'men' : ''} &middot; ${Math.round(pct)}%</div>
           </div>
           <div class="result-track">
             <div class="result-fill" data-pct="${pct}"></div>
@@ -1663,7 +1935,7 @@
     if (state.voteDetails) {
       const entries = Object.entries(state.voteDetails);
       document.getElementById('breakdown').innerHTML = `
-        <h3>Who voted for what</h3>
+        <h3>Wie stemde op wat</h3>
         ${entries.map(([name, title]) => `
           <div class="breakdown-row">
             <span class="breakdown-name">${esc(name)}</span>
@@ -1678,8 +1950,8 @@
   document.getElementById('copy-btn').addEventListener('click', () => {
     navigator.clipboard.writeText(window.location.href).then(() => {
       const btn = document.getElementById('copy-btn');
-      btn.textContent = 'Copied!';
-      setTimeout(() => { btn.textContent = 'Copy link'; }, 1800);
+      btn.textContent = 'Gekopieerd!';
+      setTimeout(() => { btn.textContent = 'Link kopiëren'; }, 1800);
     });
   });
 
@@ -1691,13 +1963,13 @@
   }
 
   document.getElementById('reset-btn').addEventListener('click', async () => {
-    if (!confirm('Start a new vote? All current votes will be cleared.')) return;
+    if (!confirm('Nieuwe stemming starten? Alle huidige stemmen worden gewist.')) return;
     await resetVote();
   });
 
   document.addEventListener('click', async e => {
     if (e.target.closest('[data-new-vote]')) {
-      if (!confirm('Start a new vote? This will clear all current results.')) return;
+      if (!confirm('Nieuwe stemming starten? Hiermee worden alle resultaten gewist.')) return;
       await resetVote();
     }
   });
@@ -1719,8 +1991,8 @@
         ? `<img class="wl-cover" src="${esc(book.coverUrl)}" alt="" />`
         : `<div class="wl-cover-placeholder">📖</div>`;
       const badge = book.fromVote
-        ? `<span class="wl-badge">🏆 won a vote</span>`
-        : `<span class="wl-badge">added by ${esc(book.addedBy)}</span>`;
+        ? `<span class="wl-badge">🏆 stem gewonnen</span>`
+        : `<span class="wl-badge">toegevoegd door ${esc(book.addedBy)}</span>`;
       return `<div class="wl-book">
         ${coverHtml}
         <div class="wl-info">
@@ -1728,7 +2000,7 @@
           ${book.author ? `<div class="wl-book-author">${esc(book.author)}</div>` : ''}
         </div>
         ${badge}
-        <button class="wl-remove-btn" data-remove-wl="${esc(book.title)}" title="Remove">&times;</button>
+        <button class="wl-remove-btn" data-remove-wl="${esc(book.title)}" title="Verwijderen">&times;</button>
       </div>`;
     }).join('');
   }
@@ -1746,11 +2018,11 @@
         body: JSON.stringify({ title, author: book?.author || '', pageCount: book?.pageCount || null, coverUrl: book?.coverUrl || null }),
       });
       if (res.ok) {
-        wlBtn.textContent = '✓ On wishlist';
+        wlBtn.textContent = '✓ Op verlanglijst';
         wlBtn.classList.add('on-wishlist');
       } else {
         const data = await res.json();
-        wlBtn.textContent = '+ Wishlist';
+        wlBtn.textContent = '+ Verlanglijst';
         wlBtn.disabled = false;
       }
       return;
@@ -1770,7 +2042,7 @@
     const btn = document.getElementById('wl-toggle-btn');
     const opening = form.style.display === 'none';
     form.style.display = opening ? 'block' : 'none';
-    btn.textContent = opening ? '✕ Cancel' : '+ Add book';
+    btn.textContent = opening ? '✕ Sluiten' : '+ Boek toevoegen';
     if (opening) document.getElementById('wl-title').focus();
   });
 
@@ -1780,7 +2052,7 @@
     const errEl = document.getElementById('wl-error');
     errEl.style.display = 'none';
 
-    if (!title) { errEl.textContent = 'Please enter a title.'; errEl.style.display = 'block'; return; }
+    if (!title) { errEl.textContent = 'Voer een titel in.'; errEl.style.display = 'block'; return; }
 
     const res = await fetch('/api/wishlist', {
       method: 'POST',
@@ -1795,8 +2067,147 @@
     document.getElementById('wl-preview').style.display = 'none';
     wishlistMeta = {};
     document.getElementById('wl-add-form').style.display = 'none';
-    document.getElementById('wl-toggle-btn').textContent = '+ Add book';
+    document.getElementById('wl-toggle-btn').textContent = '+ Boek toevoegen';
     fetchState();
+  });
+
+  // ── History ────────────────────────────────────────────────────────────────
+
+  function renderHistory(state) {
+    const select = document.getElementById('hist-organizer');
+    if (select && state.members?.length) {
+      const current = select.value;
+      select.innerHTML = state.members.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join('');
+      if (current && state.members.includes(current)) select.value = current;
+    }
+    const history = (state.history || []).slice().sort((a, b) => b.date.localeCompare(a.date));
+    const list = document.getElementById('hist-list');
+    const empty = document.getElementById('hist-empty');
+    if (!list) return;
+    if (!history.length) {
+      list.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    const renderEntry = (entry, isCurrent) => {
+      const book = entry.book || {};
+      const coverHtml = book.coverUrl
+        ? `<img class="hist-cover" src="${esc(book.coverUrl)}" alt="" />`
+        : `<div class="hist-cover-placeholder">📖</div>`;
+      const dateStr = entry.date
+        ? new Date(entry.date + 'T12:00:00').toLocaleDateString('nl-NL', { year: 'numeric', month: 'short', day: 'numeric' })
+        : '';
+      return `<div class="hist-item${isCurrent ? ' hist-item-current' : ''}">
+        ${coverHtml}
+        <div class="hist-info">
+          <div class="hist-book-title">${esc(book.title || '')}</div>
+          ${book.author ? `<div class="hist-book-author">${esc(book.author)}</div>` : ''}
+          <div class="hist-meta">${dateStr}${entry.organizer ? ` · georganiseerd door ${esc(entry.organizer)}` : ''}</div>
+        </div>
+        <div class="hist-actions">
+          <button class="hist-edit-btn" data-edit-hist="${esc(entry.id)}">Bewerken</button>
+          <button class="hist-remove-btn" data-remove-hist="${esc(entry.id)}" title="Verwijderen">&times;</button>
+        </div>
+      </div>`;
+    };
+    const [current, ...rest] = history;
+    const currentSection = `<div class="hist-section-title">We lezen nu</div>${renderEntry(current, true)}`;
+    const pastSection = rest.length
+      ? `<div class="hist-section-title">Al besproken boeken</div>${rest.map(e => renderEntry(e, false)).join('')}`
+      : '';
+    list.innerHTML = currentSection + pastSection;
+  }
+
+  function resetHistForm() {
+    editingHistId = null;
+    histMeta = {};
+    document.getElementById('hist-date').value = '';
+    document.getElementById('hist-organizer').selectedIndex = 0;
+    document.getElementById('hist-title').value = '';
+    document.getElementById('hist-author').value = '';
+    document.getElementById('hist-preview').style.display = 'none';
+    document.getElementById('hist-error').style.display = 'none';
+    document.getElementById('hist-submit-btn').textContent = 'Item toevoegen';
+    document.getElementById('hist-cancel-btn').style.display = 'none';
+  }
+
+  document.getElementById('hist-toggle-btn').addEventListener('click', () => {
+    const form = document.getElementById('hist-add-form');
+    const btn = document.getElementById('hist-toggle-btn');
+    const opening = form.style.display === 'none';
+    if (opening) {
+      resetHistForm();
+      form.style.display = 'block';
+      btn.textContent = '✕ Sluiten';
+      document.getElementById('hist-date').focus();
+    } else {
+      form.style.display = 'none';
+      btn.textContent = '+ Item toevoegen';
+    }
+  });
+
+  document.getElementById('hist-cancel-btn').addEventListener('click', () => {
+    resetHistForm();
+    document.getElementById('hist-submit-btn').textContent = 'Item toevoegen';
+  });
+
+  document.getElementById('hist-submit-btn').addEventListener('click', async () => {
+    const date = document.getElementById('hist-date').value;
+    const organizer = document.getElementById('hist-organizer').value.trim();
+    const title = document.getElementById('hist-title').value.trim();
+    const author = document.getElementById('hist-author').value.trim();
+    const errEl = document.getElementById('hist-error');
+    errEl.style.display = 'none';
+
+    if (!date) { errEl.textContent = 'Selecteer een datum.'; errEl.style.display = 'block'; return; }
+    if (!organizer) { errEl.textContent = 'Selecteer een organisator.'; errEl.style.display = 'block'; return; }
+    if (!title) { errEl.textContent = 'Voer de boektitel in.'; errEl.style.display = 'block'; return; }
+
+    const body = { date, organizer, book: { title, author, ...histMeta } };
+    const url = editingHistId ? `/api/history/${editingHistId}` : '/api/history';
+    const method = editingHistId ? 'PUT' : 'POST';
+
+    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+
+    document.getElementById('hist-add-form').style.display = 'none';
+    document.getElementById('hist-toggle-btn').textContent = '+ Item toevoegen';
+    resetHistForm();
+    fetchState();
+  });
+
+  document.addEventListener('click', async e => {
+    const removeBtn = e.target.closest('[data-remove-hist]');
+    if (removeBtn) {
+      const id = removeBtn.dataset.removeHist;
+      await fetch(`/api/history/${id}`, { method: 'DELETE' });
+      fetchState();
+      return;
+    }
+
+    const editBtn = e.target.closest('[data-edit-hist]');
+    if (editBtn) {
+      const id = editBtn.dataset.editHist;
+      const entry = (window._lastState?.history || []).find(h => h.id === id);
+      if (!entry) return;
+      editingHistId = id;
+      histMeta = { pageCount: entry.book?.pageCount || null, coverUrl: entry.book?.coverUrl || null };
+      document.getElementById('hist-date').value = entry.date || '';
+      document.getElementById('hist-organizer').value = entry.organizer || '';
+      document.getElementById('hist-title').value = entry.book?.title || '';
+      document.getElementById('hist-author').value = entry.book?.author || '';
+      document.getElementById('hist-preview').style.display = 'none';
+      document.getElementById('hist-error').style.display = 'none';
+      document.getElementById('hist-submit-btn').textContent = 'Wijzigingen opslaan';
+      document.getElementById('hist-cancel-btn').style.display = '';
+      const form = document.getElementById('hist-add-form');
+      form.style.display = 'block';
+      document.getElementById('hist-toggle-btn').textContent = '✕ Sluiten';
+      form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      return;
+    }
   });
 
   // ── Nav / hamburger ────────────────────────────────────────────────────────
@@ -1823,9 +2234,9 @@
   });
 
   function switchPage(page) {
-    const isHome = page === 'home';
-    document.getElementById('main-content').style.display = isHome ? '' : 'none';
-    document.getElementById('wishlist-panel').style.display = isHome ? 'none' : '';
+    document.getElementById('main-content').style.display = page === 'home' ? '' : 'none';
+    document.getElementById('wishlist-panel').style.display = page === 'wishlist' ? '' : 'none';
+    document.getElementById('history-panel').style.display = page === 'history' ? '' : 'none';
     navMenu.querySelectorAll('.nav-item').forEach(item => {
       item.classList.toggle('active', item.dataset.nav === page);
     });
