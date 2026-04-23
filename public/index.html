@@ -113,9 +113,16 @@
       flex-shrink: 0;
       opacity: 0.9;
     }
-    .cb-label { opacity: 0.6; white-space: nowrap; }
+    .cb-label { opacity: 0.6; white-space: nowrap; flex-shrink: 0; }
     .cb-title { font-weight: 600; }
     .cb-author { opacity: 0.7; margin-left: 0.25rem; }
+    #cb-scroll-track { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; }
+    #cb-scroll-content { display: inline-block; white-space: nowrap; }
+    #cb-scroll-content.scrolling { animation: cb-marquee 14s linear infinite; }
+    @keyframes cb-marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
 
     /* ── Layout ── */
     main {
@@ -798,6 +805,9 @@
     .wl-book-author { font-size: 0.78rem; color: var(--gray); margin-top: 0.1rem; }
     .wl-badge { display: inline-block; margin-top: 0.25rem; font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 20px; font-weight: 600; background: var(--muted-gold); color: var(--mid-brown); border: 1px solid var(--border); white-space: nowrap; }
     .wl-empty { font-size: 0.85rem; color: var(--gray); text-align: center; padding: 0.75rem 0; }
+    .wl-add-trigger { display: flex; align-items: center; gap: 0.75rem; width: 100%; padding: 0.6rem 0.75rem; border-radius: 8px; border: 1px dashed var(--border); background: transparent; cursor: pointer; color: var(--gray); font-size: 0.85rem; font-family: inherit; text-align: left; }
+    .wl-add-trigger:hover { border-color: var(--gold); background: var(--muted-gold); color: var(--mid-brown); }
+    .wl-add-icon { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
     .wl-remove-btn { background: none; border: none; cursor: pointer; color: var(--gray); font-size: 1.1rem; line-height: 1; padding: 0.2rem 0.3rem; border-radius: 4px; flex-shrink: 0; }
     .wl-remove-btn:hover { color: var(--brown); background: var(--border); }
     .wl-card-btn { margin-top: 0.4rem; background: none; border: 1px solid var(--border); border-radius: 20px; padding: 0.2rem 0.65rem; font-size: 0.73rem; font-family: inherit; color: var(--gray); cursor: pointer; transition: background 0.15s, border-color 0.15s; }
@@ -842,20 +852,23 @@
     .hist-list { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; }
     .hist-item {
       display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.6rem 0.75rem;
+      flex-direction: column;
+      gap: 0.35rem;
+      padding: 0.5rem 0.25rem 0.5rem 0.75rem;
       border-radius: 8px;
       border: 1px solid var(--border);
       background: var(--paper);
     }
+    .hist-item-header { display: flex; align-items: center; justify-content: space-between; }
+    .hist-item-body { display: flex; align-items: center; gap: 0.75rem; }
+    .hist-date-heading { font-size: 0.68rem; font-weight: 600; color: var(--mid-brown); opacity: 0.7; text-transform: uppercase; letter-spacing: 0.05em; }
     .hist-cover { width: 34px; height: 50px; object-fit: cover; border-radius: 3px; flex-shrink: 0; }
     .hist-cover-placeholder { width: 34px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
     .hist-info { flex: 1; min-width: 0; }
     .hist-book-title { font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .hist-book-author { font-size: 0.78rem; color: var(--gray); margin-top: 0.1rem; }
     .hist-meta { font-size: 0.72rem; color: var(--gray); margin-top: 0.25rem; }
-    .hist-actions { display: flex; gap: 0.25rem; flex-shrink: 0; align-items: center; }
+    .hist-actions { display: flex; gap: 0.1rem; flex-shrink: 0; }
     .hist-edit-btn { background: none; border: none; cursor: pointer; color: var(--gray); font-size: 1.05rem; line-height: 1; padding: 0.2rem 0.3rem; border-radius: 4px; }
     .hist-edit-btn:hover { color: var(--mid-brown); background: var(--border); }
     .hist-remove-btn { background: none; border: none; cursor: pointer; color: var(--gray); font-size: 1.1rem; line-height: 1; padding: 0.2rem 0.3rem; border-radius: 4px; }
@@ -875,7 +888,6 @@
       border-color: var(--gold);
       background: var(--muted-gold);
     }
-    .hist-item-current .hist-book-title { font-size: 0.95rem; }
 
     /* ── Hamburger ── */
     .hamburger-btn {
@@ -1001,6 +1013,50 @@
       }
 
     }
+
+    /* ── Organizer wheel ── */
+    #organizer-panel { max-width: 760px; margin: 0 auto; }
+    #organizer-panel-inner { padding: 1.5rem 1.25rem; }
+    .org-heading { font-family: 'Playfair Display', Georgia, serif; font-size: 1.4rem; font-weight: 700; color: var(--brown); margin-bottom: 0.25rem; }
+    .org-subtitle { font-size: 0.85rem; color: var(--gray); margin-bottom: 1.25rem; }
+    .org-members-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem; }
+    .org-chip {
+      padding: 0.35rem 0.85rem;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--paper);
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: var(--gray);
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+    .org-chip.selected { background: var(--muted-gold); border-color: var(--gold); color: var(--mid-brown); font-weight: 600; }
+    .org-spin-btn { margin-bottom: 1.5rem; }
+    .org-spin-btn:disabled { opacity: 0.4; cursor: default; }
+    .org-wheel-wrap { position: relative; width: 300px; height: 320px; margin: 0 auto 1.5rem; }
+    .org-pointer {
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.4rem;
+      color: var(--brown);
+      z-index: 1;
+      line-height: 1;
+    }
+    #org-wheel { display: block; margin-top: 1.2rem; border-radius: 50%; box-shadow: 0 4px 18px rgba(0,0,0,0.12); }
+    .org-result {
+      text-align: center;
+      padding: 1.5rem;
+      border-radius: 12px;
+      border: 1px solid var(--gold);
+      background: var(--muted-gold);
+      animation: rise 0.4s ease;
+    }
+    .org-result-emoji { font-size: 2rem; margin-bottom: 0.5rem; }
+    .org-result-name { font-family: 'Playfair Display', Georgia, serif; font-size: 1.5rem; font-weight: 700; color: var(--brown); }
+    .org-result-label { font-size: 0.85rem; color: var(--mid-brown); margin-top: 0.25rem; }
+    .org-again-btn { margin-top: 1rem; }
   </style>
 </head>
 <body>
@@ -1023,6 +1079,7 @@
   <button class="nav-item active" data-nav="home">Kies het volgende boek</button>
   <button class="nav-item" data-nav="wishlist">Verlanglijst</button>
   <button class="nav-item" data-nav="history">Geschiedenis</button>
+  <button class="nav-item" data-nav="organizer">Organisator kiezen</button>
 </nav>
 
 <div id="current-book-banner" style="display:none">
@@ -1269,10 +1326,12 @@
   <div class="wishlist-inner">
     <div class="wishlist-header">
       <h3 class="wishlist-title">Ik wil deze graag hebben</h3>
-      <button class="link-btn" id="wl-toggle-btn">+ Boek toevoegen</button>
     </div>
 
-    <div id="wl-add-form" style="display:none">
+    <div id="wl-list" class="wl-list"></div>
+    <p id="wl-empty" class="wl-empty" style="display:none">Nog geen boeken in de wenslijst</p>
+
+    <div id="wl-add-form" style="display:none;margin-top:0.5rem">
       <div id="wl-error" class="alert alert-error" style="margin-bottom:0.75rem;display:none"></div>
       <div class="wl-form-row">
         <input type="text" id="wl-title" placeholder="Titel" />
@@ -1283,8 +1342,10 @@
       <button class="btn btn-gold" id="wl-submit-btn" style="margin-top:0.75rem">Aan verlanglijst toevoegen</button>
     </div>
 
-    <div id="wl-list" class="wl-list"></div>
-    <p id="wl-empty" class="wl-empty" style="display:none">Nog geen boeken in de wenslijst</p>
+    <button id="wl-toggle-btn" class="wl-add-trigger" style="margin-top:0.5rem">
+      <span class="wl-add-icon">+</span>
+      <span>Boek toevoegen</span>
+    </button>
   </div>
 </section>
 
@@ -1321,6 +1382,25 @@
 
     <div id="hist-list" class="hist-list"></div>
     <p id="hist-empty" class="wl-empty" style="display:none">Nog geen geschiedenis — voeg je eerste item toe!</p>
+  </div>
+</section>
+
+<section id="organizer-panel" style="display:none">
+  <div id="organizer-panel-inner">
+    <h2 class="org-heading">Organisator kiezen</h2>
+    <p class="org-subtitle">Selecteer wie in aanmerking komt en draai het wiel.</p>
+    <div id="org-members-grid" class="org-members-grid"></div>
+    <button id="org-spin-btn" class="btn btn-gold org-spin-btn" disabled>Draai het wiel</button>
+    <div id="org-wheel-wrap" class="org-wheel-wrap" style="display:none">
+      <div class="org-pointer">▼</div>
+      <canvas id="org-wheel" width="300" height="300"></canvas>
+    </div>
+    <div id="org-result" class="org-result" style="display:none">
+      <div class="org-result-emoji">🎉</div>
+      <div class="org-result-name" id="org-result-name"></div>
+      <div class="org-result-label">organiseert de volgende avond!</div>
+      <button class="btn btn-secondary org-again-btn" id="org-again-btn">Opnieuw draaien</button>
+    </div>
   </div>
 </section>
 
@@ -1389,8 +1469,17 @@
     const coverHtml = book.coverUrl
       ? `<img src="${esc(book.coverUrl)}" alt="" />`
       : '';
-    inner.innerHTML = `${coverHtml}<span class="cb-label">Jullie lezen nu:&nbsp;</span><span class="cb-title">${esc(book.title || '')}</span>${book.author ? `<span class="cb-author">— ${esc(book.author)}</span>` : ''}`;
+    const textHtml = `<span class="cb-title">${esc(book.title || '')}</span>${book.author ? `<span class="cb-author">— ${esc(book.author)}</span>` : ''}`;
+    inner.innerHTML = `${coverHtml}<span class="cb-label">Jullie lezen nu:&nbsp;</span><div id="cb-scroll-track"><div id="cb-scroll-content">${textHtml}</div></div>`;
     banner.style.display = '';
+    requestAnimationFrame(() => {
+      const track = document.getElementById('cb-scroll-track');
+      const content = document.getElementById('cb-scroll-content');
+      if (track && content && content.offsetWidth > track.offsetWidth) {
+        content.innerHTML += '<span style="padding:0 2.5rem">·</span>' + textHtml;
+        content.classList.add('scrolling');
+      }
+    });
   }
 
   async function fetchState() {
@@ -1400,6 +1489,7 @@
     renderWishlist(state);
     renderHistory(state);
     renderCurrentBook(state);
+    if (state.members?.length) renderOrgMembers(state.members);
     render(state);
   }
 
@@ -1989,7 +2079,7 @@
         ? `<img class="wl-cover" src="${esc(book.coverUrl)}" alt="" />`
         : `<div class="wl-cover-placeholder">📖</div>`;
       const badge = book.fromVote
-        ? `<span class="wl-badge">🏆 stem gewonnen</span>`
+        ? `<span class="wl-badge">🏆 Winnaar!</span>`
         : `<span class="wl-badge">toegevoegd door ${esc(book.addedBy)}</span>`;
       return `<div class="wl-book">
         ${coverHtml}
@@ -2040,7 +2130,7 @@
     const btn = document.getElementById('wl-toggle-btn');
     const opening = form.style.display === 'none';
     form.style.display = opening ? 'block' : 'none';
-    btn.textContent = opening ? '✕ Sluiten' : '+ Boek toevoegen';
+    btn.style.display = opening ? 'none' : '';
     if (opening) document.getElementById('wl-title').focus();
   });
 
@@ -2065,7 +2155,7 @@
     document.getElementById('wl-preview').style.display = 'none';
     wishlistMeta = {};
     document.getElementById('wl-add-form').style.display = 'none';
-    document.getElementById('wl-toggle-btn').textContent = '+ Boek toevoegen';
+    document.getElementById('wl-toggle-btn').style.display = '';
     fetchState();
   });
 
@@ -2097,15 +2187,20 @@
         ? new Date(entry.date + 'T12:00:00').toLocaleDateString('nl-NL', { year: 'numeric', month: 'short', day: 'numeric' })
         : '';
       return `<div class="hist-item${isCurrent ? ' hist-item-current' : ''}">
-        ${coverHtml}
-        <div class="hist-info">
-          <div class="hist-book-title">${esc(book.title || '')}</div>
-          ${book.author ? `<div class="hist-book-author">${esc(book.author)}</div>` : ''}
-          <div class="hist-meta">${dateStr}${entry.organizer ? ` · georganiseerd door ${esc(entry.organizer)}` : ''}</div>
+        <div class="hist-item-header">
+          <div class="hist-date-heading">☑ ${dateStr}</div>
+          <div class="hist-actions">
+            <button class="hist-edit-btn" data-edit-hist="${esc(entry.id)}" title="Bewerken">✏️</button>
+            <button class="hist-remove-btn" data-remove-hist="${esc(entry.id)}" title="Verwijderen">&times;</button>
+          </div>
         </div>
-        <div class="hist-actions">
-          <button class="hist-edit-btn" data-edit-hist="${esc(entry.id)}" title="Bewerken">✏️</button>
-          <button class="hist-remove-btn" data-remove-hist="${esc(entry.id)}" title="Verwijderen">&times;</button>
+        <div class="hist-item-body">
+          ${coverHtml}
+          <div class="hist-info">
+            <div class="hist-book-title">${esc(book.title || '')}</div>
+            ${book.author ? `<div class="hist-book-author">${esc(book.author)}</div>` : ''}
+            ${entry.organizer ? `<div class="hist-meta">georganiseerd door ${esc(entry.organizer)}</div>` : ''}
+          </div>
         </div>
       </div>`;
     };
@@ -2235,6 +2330,7 @@
     document.getElementById('main-content').style.display = page === 'home' ? '' : 'none';
     document.getElementById('wishlist-panel').style.display = page === 'wishlist' ? '' : 'none';
     document.getElementById('history-panel').style.display = page === 'history' ? '' : 'none';
+    document.getElementById('organizer-panel').style.display = page === 'organizer' ? '' : 'none';
     navMenu.querySelectorAll('.nav-item').forEach(item => {
       item.classList.toggle('active', item.dataset.nav === page);
     });
@@ -2245,6 +2341,142 @@
     const item = e.target.closest('.nav-item');
     if (!item) return;
     switchPage(item.dataset.nav);
+  });
+
+  // ── Organizer wheel ────────────────────────────────────────────────────────
+
+  const WHEEL_COLORS = ['#c8a76d','#8b5d3b','#d4b895','#6b4226','#b8956a','#7a4c2c','#e0c890','#5a3520','#a07848','#4a2c18'];
+
+  let orgSelected = new Set();
+
+  function renderOrgMembers(members) {
+    const grid = document.getElementById('org-members-grid');
+    if (!grid) return;
+    orgSelected = new Set(members);
+    grid.innerHTML = members.map(m => `
+      <button class="org-chip selected" data-member="${esc(m)}">${esc(m)}</button>
+    `).join('');
+    updateSpinBtn();
+  }
+
+  function updateSpinBtn() {
+    const btn = document.getElementById('org-spin-btn');
+    if (btn) btn.disabled = orgSelected.size < 2;
+  }
+
+  document.getElementById('org-members-grid').addEventListener('click', e => {
+    const chip = e.target.closest('.org-chip');
+    if (!chip) return;
+    const name = chip.dataset.member;
+    if (orgSelected.has(name)) {
+      orgSelected.delete(name);
+      chip.classList.remove('selected');
+    } else {
+      orgSelected.add(name);
+      chip.classList.add('selected');
+    }
+    updateSpinBtn();
+  });
+
+  function drawWheel(members, rotation) {
+    const canvas = document.getElementById('org-wheel');
+    const ctx = canvas.getContext('2d');
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const r = cx - 4;
+    const n = members.length;
+    const segAngle = (2 * Math.PI) / n;
+    const fontSize = Math.max(10, Math.min(14, Math.floor(80 / n)));
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    members.forEach((name, i) => {
+      const start = rotation + i * segAngle;
+      const end = start + segAngle;
+
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, start, end);
+      ctx.closePath();
+      ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length];
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(start + segAngle / 2);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#fff';
+      ctx.font = `bold ${fontSize}px sans-serif`;
+      ctx.shadowColor = 'rgba(0,0,0,0.3)';
+      ctx.shadowBlur = 3;
+      const label = name.split(' ')[0];
+      ctx.fillText(label, r - 8, fontSize / 3);
+      ctx.restore();
+    });
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, 14, 0, 2 * Math.PI);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.strokeStyle = '#ccc';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  let spinAnimId = null;
+
+  function spinWheel() {
+    const members = Array.from(orgSelected);
+    const n = members.length;
+    const targetIndex = Math.floor(Math.random() * n);
+    const segAngle = (2 * Math.PI) / n;
+
+    // Pointer is at top = -π/2. Find rotation so targetIndex segment is centered there.
+    let finalRotation = -Math.PI / 2 - (targetIndex + 0.5) * segAngle;
+    finalRotation = ((finalRotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    const totalRotation = (6 + Math.floor(Math.random() * 5)) * 2 * Math.PI + finalRotation;
+
+    const duration = 5000;
+    const startTime = performance.now();
+
+    const wrap = document.getElementById('org-wheel-wrap');
+    const result = document.getElementById('org-result');
+    wrap.style.display = '';
+    result.style.display = 'none';
+    document.getElementById('org-spin-btn').disabled = true;
+
+    drawWheel(members, 0);
+
+    if (spinAnimId) cancelAnimationFrame(spinAnimId);
+
+    function animate(now) {
+      const t = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 4);
+      const rotation = eased * totalRotation;
+      drawWheel(members, rotation);
+
+      if (t < 1) {
+        spinAnimId = requestAnimationFrame(animate);
+      } else {
+        drawWheel(members, totalRotation);
+        document.getElementById('org-result-name').textContent = members[targetIndex];
+        result.style.display = '';
+        document.getElementById('org-spin-btn').disabled = false;
+      }
+    }
+
+    spinAnimId = requestAnimationFrame(animate);
+  }
+
+  document.getElementById('org-spin-btn').addEventListener('click', spinWheel);
+
+  document.getElementById('org-again-btn').addEventListener('click', () => {
+    document.getElementById('org-result').style.display = 'none';
+    document.getElementById('org-wheel-wrap').style.display = 'none';
+    document.getElementById('org-spin-btn').disabled = orgSelected.size < 2;
   });
 
   // ── Boot ───────────────────────────────────────────────────────────────────
