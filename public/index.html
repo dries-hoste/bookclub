@@ -1032,6 +1032,7 @@
       transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
     .org-chip.selected { background: var(--muted-gold); border-color: var(--gold); color: var(--mid-brown); font-weight: 600; }
+    .org-chip.selected::before { content: '✓ '; }
     .org-spin-btn { margin-bottom: 1.5rem; }
     .org-spin-btn:disabled { opacity: 0.4; cursor: default; }
     .org-wheel-wrap { position: relative; width: 300px; height: 320px; margin: 0 auto 1.5rem; }
