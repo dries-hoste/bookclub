@@ -126,7 +126,8 @@ app.get('/api/lookup', async (req, res) => {
   try {
     const parts = [`intitle:${title}`, author ? `inauthor:${author}` : ''].filter(Boolean);
     const q = encodeURIComponent(parts.join(' '));
-    const data = await fetchJson(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&printType=books`);
+    const apiKey = process.env.GOOGLE_BOOKS_API_KEY ? `&key=${process.env.GOOGLE_BOOKS_API_KEY}` : '';
+    const data = await fetchJson(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&printType=books${apiKey}`);
     if (!data.items?.length) return res.json({ found: false });
     const item = data.items.find(i => i.volumeInfo?.pageCount) || data.items[0];
     const info = item.volumeInfo;

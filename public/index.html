@@ -300,7 +300,6 @@
       grid-template-columns: 1fr 1fr;
       gap: 0.75rem;
     }
-    @media (max-width: 480px) { .input-row { grid-template-columns: 1fr; } }
 
     hr {
       border: none;
@@ -718,7 +717,7 @@
     #wishlist-panel {
       max-width: 760px;
       margin: 0 auto;
-      padding: 0 1.25rem 4rem;
+      padding: 2.5rem 1.25rem 4rem;
     }
     .wishlist-inner {
       background: var(--white);
@@ -777,6 +776,132 @@
     .wl-card-btn { margin-top: 0.4rem; background: none; border: 1px solid var(--border); border-radius: 20px; padding: 0.2rem 0.65rem; font-size: 0.73rem; font-family: inherit; color: var(--gray); cursor: pointer; transition: background 0.15s, border-color 0.15s; }
     .wl-card-btn:hover:not(:disabled) { background: var(--muted-gold); border-color: var(--gold); color: var(--mid-brown); }
     .wl-card-btn.on-wishlist { color: var(--mid-brown); border-color: var(--gold); background: var(--muted-gold); cursor: default; }
+
+    /* ── Hamburger ── */
+    .hamburger-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0.35rem;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+    .hamburger-btn:hover { background: rgba(240,224,176,0.12); }
+    .hamburger-btn span {
+      display: block;
+      width: 20px;
+      height: 2px;
+      background: var(--light-gold);
+      border-radius: 2px;
+      transition: transform 0.22s ease, opacity 0.18s;
+    }
+    .hamburger-btn.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger-btn.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    .hamburger-btn.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    /* ── Nav menu ── */
+    .nav-menu {
+      background: var(--brown);
+      border-bottom: 1px solid rgba(240,224,176,0.12);
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.25s ease, padding 0.25s ease;
+    }
+    .nav-menu.open {
+      max-height: 200px;
+      padding: 0.25rem 0;
+    }
+    .nav-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      color: var(--light-gold);
+      font-family: inherit;
+      font-size: 0.95rem;
+      padding: 0.8rem 1.75rem;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.15s, background 0.15s;
+      letter-spacing: 0.01em;
+    }
+    .nav-item:hover { opacity: 1; background: rgba(240,224,176,0.07); }
+    .nav-item.active { opacity: 1; font-weight: 600; }
+    .nav-item.active::before {
+      content: '›';
+      margin-right: 0.5rem;
+      color: var(--gold);
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 600px) {
+      /* Header: tighter, hide low-priority items */
+      header { padding: 0.85rem 1rem; }
+      .header-title { font-size: 1.15rem; }
+      .header-user { display: none; }
+      .organizer-badge { display: none; }
+      .reset-btn { padding: 0.4rem 0.65rem; font-size: 0.75rem; }
+
+      /* Layout */
+      main { padding: 1.25rem 1rem 3rem; }
+      #wishlist-panel { padding: 1.25rem 1rem 3rem; }
+
+      /* Cards */
+      .card { padding: 1.25rem; border-radius: 10px; }
+      .wishlist-inner { padding: 1.25rem; border-radius: 10px; }
+
+      /* Typography */
+      h2 { font-size: 1.3rem; }
+      .subtitle { font-size: 0.88rem; margin-bottom: 1.25rem; }
+
+      /* Prevent iOS auto-zoom on input focus */
+      input[type="text"],
+      input[type="number"] { font-size: 16px; }
+
+      /* Buttons: min 48px touch target */
+      .btn { min-height: 48px; }
+
+      /* Setup form: stack title + author inputs */
+      .input-row { grid-template-columns: 1fr; }
+      .book-input-group { padding: 1rem; }
+
+      /* Vote/admin book cards: single column, less padding */
+      .books-grid,
+      .books-display { grid-template-columns: 1fr; gap: 0.65rem; }
+      .book-card { padding: 1rem; }
+
+      /* Hero sections: tighter */
+      .landing-hero { padding: 1.25rem 0 1rem; }
+      .landing-hero .emoji { font-size: 2.8rem; }
+      .waiting-hero { padding: 0.75rem 0 1rem; }
+      .waiting-hero .emoji { font-size: 2.4rem; }
+
+      /* Winner banner */
+      .winner-banner { padding: 1.5rem 1.25rem; border-radius: 10px; }
+      .winner-title { font-size: 1.5rem; }
+
+      /* Result rows: allow tally to wrap below title */
+      .result-header { flex-wrap: wrap; gap: 0.2rem; }
+
+      /* Wishlist add form: stack vertically */
+      .wl-form-row { flex-direction: column; align-items: stretch; }
+      .wl-form-row input { min-width: 0; }
+      .wl-form-row .lookup-btn {
+        width: 100%;
+        padding: 0.6rem;
+        text-align: center;
+        font-size: 0.85rem;
+      }
+
+      /* Wishlist book row: hide badge on very tight layouts */
+      .wl-badge { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -789,10 +914,18 @@
     <span class="header-user" id="header-user"></span>
     <span class="organizer-badge" id="organizer-badge" style="display:none">Organizer</span>
     <button class="reset-btn" id="reset-btn" style="display:none">↺ New vote</button>
+    <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </header>
 
-<main>
+<nav class="nav-menu" id="nav-menu" role="navigation">
+  <button class="nav-item active" data-nav="home">Pick the next book</button>
+  <button class="nav-item" data-nav="wishlist">Wishlist</button>
+</nav>
+
+<main id="main-content">
 
   <!-- ── ROLE VIEW (no organizer assigned yet) ── -->
   <div id="role-view" class="view">
@@ -1010,7 +1143,7 @@
 
 </main>
 
-<section id="wishlist-panel">
+<section id="wishlist-panel" style="display:none">
   <div class="wishlist-inner">
     <div class="wishlist-header">
       <h3 class="wishlist-title">Reading wishlist</h3>
@@ -1664,6 +1797,45 @@
     document.getElementById('wl-add-form').style.display = 'none';
     document.getElementById('wl-toggle-btn').textContent = '+ Add book';
     fetchState();
+  });
+
+  // ── Nav / hamburger ────────────────────────────────────────────────────────
+
+  const hamburgerBtn = document.getElementById('hamburger-btn');
+  const navMenu = document.getElementById('nav-menu');
+
+  function closeNav() {
+    navMenu.classList.remove('open');
+    hamburgerBtn.classList.remove('open');
+    hamburgerBtn.setAttribute('aria-expanded', 'false');
+  }
+
+  hamburgerBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const opening = !navMenu.classList.contains('open');
+    navMenu.classList.toggle('open', opening);
+    hamburgerBtn.classList.toggle('open', opening);
+    hamburgerBtn.setAttribute('aria-expanded', String(opening));
+  });
+
+  document.addEventListener('click', e => {
+    if (!navMenu.contains(e.target) && !hamburgerBtn.contains(e.target)) closeNav();
+  });
+
+  function switchPage(page) {
+    const isHome = page === 'home';
+    document.getElementById('main-content').style.display = isHome ? '' : 'none';
+    document.getElementById('wishlist-panel').style.display = isHome ? 'none' : '';
+    navMenu.querySelectorAll('.nav-item').forEach(item => {
+      item.classList.toggle('active', item.dataset.nav === page);
+    });
+    closeNav();
+  }
+
+  navMenu.addEventListener('click', e => {
+    const item = e.target.closest('.nav-item');
+    if (!item) return;
+    switchPage(item.dataset.nav);
   });
 
   // ── Boot ───────────────────────────────────────────────────────────────────
