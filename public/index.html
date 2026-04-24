@@ -486,6 +486,91 @@
       font-style: italic;
     }
 
+    .book-info-btn {
+      position: absolute;
+      top: 10px; left: 10px;
+      width: 20px; height: 20px;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      color: var(--gray);
+      font-size: 0.7rem;
+      font-style: italic;
+      font-weight: 600;
+      font-family: Georgia, serif;
+      cursor: pointer;
+      padding: 0;
+      line-height: 20px;
+      text-align: center;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      z-index: 1;
+    }
+    .book-info-btn:hover { border-color: var(--gold); color: var(--brown); background: var(--muted-gold); }
+
+    /* ── Book detail modal ── */
+    .book-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(44,24,16,0.55);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .book-modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .book-modal {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 1.75rem;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    .book-modal-close {
+      position: absolute;
+      top: 1rem; right: 1rem;
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+      color: var(--gray);
+      line-height: 1;
+      padding: 0.25rem;
+      font-family: inherit;
+    }
+    .book-modal-close:hover { color: var(--brown); }
+    .book-modal-header { display: flex; gap: 1rem; margin-bottom: 1.25rem; padding-right: 1.5rem; }
+    .book-modal-cover { width: 72px; height: 108px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+    .book-modal-cover-placeholder {
+      width: 72px; height: 108px;
+      background: var(--paper);
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; flex-shrink: 0;
+    }
+    .book-modal-meta { flex: 1; }
+    .book-modal-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem; font-weight: 700; line-height: 1.35; margin-bottom: 0.35rem;
+    }
+    .book-modal-author { font-size: 0.85rem; color: var(--gray); font-style: italic; margin-bottom: 0.25rem; }
+    .book-modal-pages { font-size: 0.8rem; color: var(--gray); }
+    .book-modal-description {
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: var(--mid-brown);
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+    }
+    .book-modal-loading { font-size: 0.88rem; color: var(--gray); font-style: italic; }
+
     /* ── Alert ── */
     .alert {
       padding: 0.75rem 1rem;
@@ -1405,6 +1490,21 @@
   </div>
 </section>
 
+<div id="book-modal-overlay" class="book-modal-overlay" role="dialog" aria-modal="true">
+  <div class="book-modal">
+    <button class="book-modal-close" id="book-modal-close" aria-label="Sluiten">&times;</button>
+    <div class="book-modal-header">
+      <div id="book-modal-cover-wrap"></div>
+      <div class="book-modal-meta">
+        <div class="book-modal-title" id="book-modal-title"></div>
+        <div class="book-modal-author" id="book-modal-author"></div>
+        <div class="book-modal-pages" id="book-modal-pages"></div>
+      </div>
+    </div>
+    <div class="book-modal-description" id="book-modal-description"></div>
+  </div>
+</div>
+
 <script>
   let pollTimer = null;
   let selectedBook = null;
@@ -1754,6 +1854,7 @@
           ${book.author ? `<div class="book-card-author">${esc(book.author)}</div>` : ''}
           ${book.pageCount ? `<div class="book-card-pages">${book.pageCount} pages</div>` : ''}
           ${readInfo}
+          <button class="book-info-btn" data-info-title="${esc(book.title)}" data-info-author="${esc(book.author||'')}" data-info-cover="${esc(book.coverUrl||'')}" data-info-pages="${book.pageCount||''}">i</button>
         </div>
       `;
     }).join('');
@@ -1802,7 +1903,8 @@
             <input type="checkbox" class="already-read-cb" data-book="${esc(book.title)}" onclick="event.stopPropagation()" />
             Ik heb dit al gelezen
           </label>
-          <button class="wl-card-btn${onWishlist ? ' on-wishlist' : ''}" data-wl-book="${esc(book.title)}" ${onWishlist ? 'disabled' : ''}>${onWishlist ? '✓ Op verlanglijst' : '+ Verlanglijst'}</button>
+          <button class="wl-card-btn${onWishlist ? ' on-wishlist' : ''}" data-wl-book="${esc(book.title)}" ${onWishlist ? 'disabled' : ''} onclick="event.stopPropagation()">${onWishlist ? '✓ Op verlanglijst' : '+ Verlanglijst'}</button>
+          <button class="book-info-btn" data-info-title="${esc(book.title)}" data-info-author="${esc(book.author||'')}" data-info-cover="${esc(book.coverUrl||'')}" data-info-pages="${book.pageCount||''}">i</button>
         </div>
       `;
     }).join('');
@@ -1810,6 +1912,7 @@
     grid.querySelectorAll('.book-card').forEach(card => {
       const select = e => {
         if (e.target.closest('[data-wl-book]')) return;
+        if (e.target.closest('[data-info-title]')) return;
         grid.querySelectorAll('.book-card').forEach(c => c.classList.remove('selected'));
         card.classList.add('selected');
         selectedBook = card.dataset.title;
@@ -1918,11 +2021,13 @@
           <div class="book-card-title">${esc(book.title)}</div>
           ${book.author ? `<div class="book-card-author">${esc(book.author)}</div>` : ''}
           ${book.pageCount ? `<div class="book-card-pages">${book.pageCount} pagina's</div>` : ''}
+          <button class="book-info-btn" data-info-title="${esc(book.title)}" data-info-author="${esc(book.author||'')}" data-info-cover="${esc(book.coverUrl||'')}" data-info-pages="${book.pageCount||''}">i</button>
         </div>
       `).join('');
 
       grid.querySelectorAll('.book-card').forEach(card => {
         const select = e => {
+          if (e.target.closest('[data-info-title]')) return;
           grid.querySelectorAll('.book-card').forEach(c => c.classList.remove('selected'));
           card.classList.add('selected');
           selectedTieBook = card.dataset.title;
@@ -2088,6 +2193,7 @@
           <div class="wl-book-title">${esc(book.title)}</div>
           ${book.author ? `<div class="wl-book-author">${esc(book.author)}</div>` : ''}
           ${badge}
+          <button class="book-info-btn" data-info-title="${esc(book.title)}" data-info-author="${esc(book.author||'')}" data-info-cover="${esc(book.coverUrl||'')}" data-info-pages="${book.pageCount||''}">i</button>
         </div>
         <button class="wl-remove-btn" data-remove-wl="${esc(book.title)}" title="Verwijderen">&times;</button>
       </div>`;
@@ -2201,6 +2307,7 @@
             <div class="hist-book-title">${esc(book.title || '')}</div>
             ${book.author ? `<div class="hist-book-author">${esc(book.author)}</div>` : ''}
             ${entry.organizer ? `<div class="hist-meta">georganiseerd door ${esc(entry.organizer)}</div>` : ''}
+            <button class="book-info-btn" data-info-title="${esc(book.title||'')}" data-info-author="${esc(book.author||'')}" data-info-cover="${esc(book.coverUrl||'')}" data-info-pages="${book.pageCount||''}">i</button>
           </div>
         </div>
       </div>`;
@@ -2489,6 +2596,57 @@
     document.getElementById('header-user').textContent = currentUser;
     fetchState();
   }
+
+  // ── Book detail modal ──────────────────────────────────────────────────────
+
+  function openBookModal(book) {
+    const overlay = document.getElementById('book-modal-overlay');
+    document.getElementById('book-modal-title').textContent = book.title || '';
+    document.getElementById('book-modal-author').textContent = book.author || '';
+    document.getElementById('book-modal-pages').textContent = book.pageCount ? `${book.pageCount} pagina's` : '';
+
+    document.getElementById('book-modal-cover-wrap').innerHTML = book.coverUrl
+      ? `<img class="book-modal-cover" src="${esc(book.coverUrl)}" alt="" />`
+      : `<div class="book-modal-cover-placeholder">📖</div>`;
+
+    const descEl = document.getElementById('book-modal-description');
+    if (book.description) {
+      descEl.textContent = book.description;
+    } else {
+      descEl.innerHTML = '<span class="book-modal-loading">Beschrijving ophalen…</span>';
+      const params = new URLSearchParams({ title: book.title });
+      if (book.author) params.set('author', book.author);
+      fetch(`/api/lookup?${params}`)
+        .then(r => r.json())
+        .then(data => { descEl.textContent = data.description || 'Geen beschrijving beschikbaar.'; })
+        .catch(() => { descEl.textContent = 'Beschrijving kon niet geladen worden.'; });
+    }
+
+    overlay.classList.add('open');
+  }
+
+  document.getElementById('book-modal-close').addEventListener('click', () => {
+    document.getElementById('book-modal-overlay').classList.remove('open');
+  });
+
+  document.getElementById('book-modal-overlay').addEventListener('click', e => {
+    if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.getElementById('book-modal-overlay').classList.remove('open');
+  });
+
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('[data-info-title]');
+    if (!btn) return;
+    openBookModal({
+      title: btn.dataset.infoTitle,
+      author: btn.dataset.infoAuthor || '',
+      coverUrl: btn.dataset.infoCover || null,
+      pageCount: btn.dataset.infoPages ? parseInt(btn.dataset.infoPages) : null,
+    });
+  });
 
   boot();
 </script>

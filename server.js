@@ -105,7 +105,7 @@ if (process.env.DATABASE_URL) {
 let state;
 async function saveState() { await storage.save(state); }
 
-// ── Book lookup (Google Books proxy) ──────────────────────────────────────
+// ── Book lookup ────────────────────────────────────────────────────────────
 
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
@@ -120,6 +120,31 @@ function fetchJson(url) {
   });
 }
 
+async function fetchOpenLibrary(title, author) {
+  const params = new URLSearchParams({ title, limit: '3' });
+  if (author) params.set('author', author);
+  const search = await fetchJson(`https://openlibrary.org/search.json?${params}`);
+  const doc = search.docs?.[0];
+  if (!doc) return null;
+
+  let description = null;
+  if (doc.key) {
+    try {
+      const work = await fetchJson(`https://openlibrary.org${doc.key}.json`);
+      const desc = work.description;
+      description = desc ? (typeof desc === 'string' ? desc : desc.value || null) : null;
+    } catch {}
+  }
+
+  return {
+    title: doc.title,
+    author: doc.author_name?.[0] || '',
+    pageCount: doc.number_of_pages_median || null,
+    coverUrl: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : null,
+    description,
+  };
+}
+
 app.get('/api/me', (req, res) => {
   res.json({ name: req.auth.user });
 });
@@ -132,16 +157,28 @@ app.get('/api/lookup', async (req, res) => {
     const q = encodeURIComponent(parts.join(' '));
     const apiKey = process.env.GOOGLE_BOOKS_API_KEY ? `&key=${process.env.GOOGLE_BOOKS_API_KEY}` : '';
     const data = await fetchJson(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&printType=books${apiKey}`);
-    if (!data.items?.length) return res.json({ found: false });
-    const item = data.items.find(i => i.volumeInfo?.pageCount) || data.items[0];
-    const info = item.volumeInfo;
-    res.json({
-      found: true,
-      title: info.title,
-      author: info.authors?.[0] || '',
-      pageCount: info.pageCount || null,
-      coverUrl: info.imageLinks?.thumbnail?.replace('http:', 'https:') || null,
-    });
+
+    if (data.items?.length) {
+      const item = data.items.find(i => i.volumeInfo?.pageCount) || data.items[0];
+      const info = item.volumeInfo;
+      let description = info.description || null;
+      if (!description) {
+        try { description = (await fetchOpenLibrary(info.title, info.authors?.[0]))?.description || null; } catch {}
+      }
+      return res.json({
+        found: true,
+        title: info.title,
+        author: info.authors?.[0] || '',
+        pageCount: info.pageCount || null,
+        coverUrl: info.imageLinks?.thumbnail?.replace('http:', 'https:') || null,
+        description,
+      });
+    }
+
+    // Google Books found nothing — fall back to Open Library entirely
+    const ol = await fetchOpenLibrary(title, author);
+    if (!ol) return res.json({ found: false });
+    return res.json({ found: true, ...ol });
   } catch (e) {
     console.error('Lookup error:', e.message);
     res.status(500).json({ error: 'Lookup failed' });
