@@ -1205,7 +1205,6 @@
   <div class="header-right">
     <span class="header-user" id="header-user"></span>
     <span class="organizer-badge" id="organizer-badge" style="display:none">Organisator</span>
-    <button class="reset-btn" id="reset-btn" style="display:none">↺ Nieuwe ronde</button>
     <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
@@ -1342,6 +1341,7 @@
       <p class="hint" style="margin-top:1.25rem">Deze pagina ververst automatisch.</p>
 
       <button class="edit-books-btn" id="edit-books-btn">✎ Boeken bewerken &amp; stemmen resetten</button>
+      <button class="edit-books-btn" id="reset-btn">↺ Nieuwe ronde starten</button>
     </div>
   </div>
 
@@ -1636,7 +1636,6 @@
 
   function updateHeader(amOrganizer) {
     document.getElementById('organizer-badge').style.display = amOrganizer ? '' : 'none';
-    document.getElementById('reset-btn').style.display = amOrganizer ? '' : 'none';
   }
 
   // ── Fetch & render ─────────────────────────────────────────────────────────
