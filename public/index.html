@@ -514,7 +514,7 @@
       flex-shrink: 0;
     }
     .wl-side-btns .book-info-btn,
-    .hist-info .book-info-btn {
+    .hist-actions .book-info-btn {
       position: static;
       display: inline-flex;
       align-items: center;
@@ -2314,6 +2314,7 @@
         <div class="hist-item-header">
           <div class="hist-date-heading">☑ ${dateStr}</div>
           <div class="hist-actions">
+            <button class="book-info-btn" data-info-title="${esc(book.title||'')}" data-info-author="${esc(book.author||'')}" data-info-cover="${esc(book.coverUrl||'')}" data-info-pages="${book.pageCount||''}">i</button>
             <button class="hist-edit-btn" data-edit-hist="${esc(entry.id)}" title="Bewerken">✏️</button>
             <button class="hist-remove-btn" data-remove-hist="${esc(entry.id)}" title="Verwijderen">&times;</button>
           </div>
@@ -2324,7 +2325,6 @@
             <div class="hist-book-title">${esc(book.title || '')}</div>
             ${book.author ? `<div class="hist-book-author">${esc(book.author)}</div>` : ''}
             ${entry.organizer ? `<div class="hist-meta">georganiseerd door ${esc(entry.organizer)}</div>` : ''}
-            <button class="book-info-btn" data-info-title="${esc(book.title||'')}" data-info-author="${esc(book.author||'')}" data-info-cover="${esc(book.coverUrl||'')}" data-info-pages="${book.pageCount||''}">i</button>
           </div>
         </div>
       </div>`;
