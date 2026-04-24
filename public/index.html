@@ -488,7 +488,7 @@
 
     .book-info-btn {
       position: absolute;
-      top: 10px; left: 10px;
+      top: 10px; right: 10px;
       width: 20px; height: 20px;
       background: rgba(255,255,255,0.9);
       border: 1px solid var(--border);
@@ -506,6 +506,21 @@
       z-index: 1;
     }
     .book-info-btn:hover { border-color: var(--gold); color: var(--brown); background: var(--muted-gold); }
+    .wl-side-btns {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+      flex-shrink: 0;
+    }
+    .wl-side-btns .book-info-btn,
+    .hist-info .book-info-btn {
+      position: static;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0;
+    }
 
     /* ── Book detail modal ── */
     .book-modal-overlay {
@@ -2193,9 +2208,11 @@
           <div class="wl-book-title">${esc(book.title)}</div>
           ${book.author ? `<div class="wl-book-author">${esc(book.author)}</div>` : ''}
           ${badge}
-          <button class="book-info-btn" data-info-title="${esc(book.title)}" data-info-author="${esc(book.author||'')}" data-info-cover="${esc(book.coverUrl||'')}" data-info-pages="${book.pageCount||''}">i</button>
         </div>
-        <button class="wl-remove-btn" data-remove-wl="${esc(book.title)}" title="Verwijderen">&times;</button>
+        <div class="wl-side-btns">
+          <button class="book-info-btn" data-info-title="${esc(book.title)}" data-info-author="${esc(book.author||'')}" data-info-cover="${esc(book.coverUrl||'')}" data-info-pages="${book.pageCount||''}">i</button>
+          <button class="wl-remove-btn" data-remove-wl="${esc(book.title)}" title="Verwijderen">&times;</button>
+        </div>
       </div>`;
     }).join('');
   }
