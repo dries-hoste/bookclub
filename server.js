@@ -81,8 +81,7 @@ if (process.env.DATABASE_URL) {
   };
   console.log('Storage: PostgreSQL');
 } else {
-  // File — used locally
-  const DATA_FILE = './data.json';
+  const DATA_FILE = process.env.DATA_FILE || './data.json';
   storage = {
     async load() {
       try {
@@ -91,7 +90,7 @@ if (process.env.DATABASE_URL) {
           return migrate(data);
         }
       } catch (e) {
-        console.error('Failed to load data.json:', e.message);
+        console.error('Failed to load data file:', e.message);
       }
       return defaultState();
     },
@@ -99,7 +98,12 @@ if (process.env.DATABASE_URL) {
       fs.writeFileSync(DATA_FILE, JSON.stringify(s, null, 2));
     },
   };
-  console.log('Storage: data.json (local)');
+  console.log(`Storage: file (${DATA_FILE})`);
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('⚠️  Running in production without DATABASE_URL — data will be lost on restart.');
+    console.warn('   Set DATABASE_URL to a PostgreSQL connection string, or set DATA_FILE to a');
+    console.warn('   path on a persistent volume (e.g. DATA_FILE=/data/data.json).\n');
+  }
 }
 
 let state;
@@ -229,7 +233,7 @@ app.post('/api/setup', async (req, res) => {
   const clean = cleanBooks(books);
   if (clean.length < 2) return res.status(400).json({ error: 'Please provide at least 2 valid book titles.' });
   const expectedVoters = Math.max(1, members.length - 1);
-  state = { books: clean, expectedVoters, votes: {}, alreadyRead: {}, phase: 'voting', organizer: state.organizer, wishlist: state.wishlist };
+  state = { books: clean, expectedVoters, votes: {}, alreadyRead: {}, phase: 'voting', organizer: state.organizer, wishlist: state.wishlist, history: state.history || [], concludedAt: null, tieResolved: false, chosenBook: null };
   await saveState();
   res.json({ success: true });
 });
@@ -413,10 +417,28 @@ app.post('/api/reset', async (req, res) => {
   res.json({ success: true });
 });
 
+// ── Export / import ───────────────────────────────────────────────────────
+
+app.get('/api/export', (req, res) => {
+  res.setHeader('Content-Disposition', 'attachment; filename="bookclub-backup.json"');
+  res.json(state);
+});
+
+app.post('/api/import', async (req, res) => {
+  const data = req.body;
+  if (!data || typeof data !== 'object') return res.status(400).json({ error: 'Invalid data' });
+  state = migrate(data);
+  await saveState();
+  res.json({ success: true });
+});
+
 // ── Start ─────────────────────────────────────────────────────────────────
 
 async function start() {
   state = await storage.load();
+  const historyCount = state.history?.length ?? 0;
+  const wishlistCount = state.wishlist?.length ?? 0;
+  console.log(`State loaded: phase=${state.phase}, history=${historyCount}, wishlist=${wishlistCount}`);
   app.listen(PORT, () => {
     console.log(`\nBookclub app → http://localhost:${PORT}`);
     if (members.length) {
