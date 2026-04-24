@@ -1588,6 +1588,7 @@
 
 <script>
   let pollTimer = null;
+  let currentPage = 'home';
   let selectedBook = null;
   let selectedTieBook = null;
   let currentUser = '';
@@ -1624,6 +1625,7 @@
   }
 
   function startPolling() {
+    if (currentPage !== 'home') return;
     if (!pollTimer) pollTimer = setInterval(fetchState, 5000);
   }
 
@@ -2637,6 +2639,7 @@
   });
 
   function switchPage(page) {
+    currentPage = page;
     document.getElementById('main-content').style.display = page === 'home' ? '' : 'none';
     document.getElementById('wishlist-panel').style.display = page === 'wishlist' ? '' : 'none';
     document.getElementById('history-panel').style.display = page === 'history' ? '' : 'none';
@@ -2645,6 +2648,8 @@
     navMenu.querySelectorAll('.nav-item').forEach(item => {
       item.classList.toggle('active', item.dataset.nav === page);
     });
+    if (page !== 'home') stopPolling();
+    fetchState();
     closeNav();
   }
 
@@ -2663,10 +2668,24 @@
   function renderOrgMembers(members) {
     const grid = document.getElementById('org-members-grid');
     if (!grid) return;
-    orgSelected = new Set(members);
-    grid.innerHTML = members.map(m => `
-      <button class="org-chip selected" data-member="${esc(m)}">${esc(m)}</button>
-    `).join('');
+    const existing = new Set([...grid.querySelectorAll('.org-chip')].map(c => c.dataset.member));
+    if (existing.size === 0) {
+      orgSelected = new Set(members);
+      grid.innerHTML = members.map(m => `
+        <button class="org-chip selected" data-member="${esc(m)}">${esc(m)}</button>
+      `).join('');
+    } else {
+      members.forEach(m => {
+        if (!existing.has(m)) {
+          const btn = document.createElement('button');
+          btn.className = 'org-chip selected';
+          btn.dataset.member = m;
+          btn.textContent = m;
+          grid.appendChild(btn);
+          orgSelected.add(m);
+        }
+      });
+    }
     updateSpinBtn();
   }
 
