@@ -38,7 +38,7 @@ app.use(express.static('public'));
 // ── Storage ────────────────────────────────────────────────────────────────
 
 function defaultState() {
-  return { books: [], expectedVoters: 0, votes: {}, alreadyRead: {}, phase: 'setup', organizer: null, wishlist: [], history: [], concludedAt: null, tieResolved: false, chosenBook: null };
+  return { books: [], expectedVoters: 0, votes: {}, alreadyRead: {}, phase: 'setup', organizer: null, wishlist: [], history: [], concludedAt: null, tieResolved: false, chosenBook: null, meeting: null };
 }
 
 function migrate(data) {
@@ -48,6 +48,7 @@ function migrate(data) {
   if (!('concludedAt' in data)) data.concludedAt = null;
   if (!('tieResolved' in data)) data.tieResolved = false;
   if (!('chosenBook' in data)) data.chosenBook = null;
+  if (!('meeting' in data)) data.meeting = null;
   return data;
 }
 
@@ -208,7 +209,7 @@ app.get('/api/state', (req, res) => {
     });
   });
 
-  const response = { phase: state.phase, books: state.books, expectedVoters: state.expectedVoters, voteCount, voterNames, allVoted, alreadyReadCounts, alreadyReadNames, organizer: state.organizer || null, wishlist: state.wishlist || [], history: state.history || [], members, tieResolved: state.tieResolved, chosenBook: state.chosenBook, concludedAt: state.concludedAt };
+  const response = { phase: state.phase, books: state.books, expectedVoters: state.expectedVoters, voteCount, voterNames, allVoted, alreadyReadCounts, alreadyReadNames, organizer: state.organizer || null, wishlist: state.wishlist || [], history: state.history || [], members, tieResolved: state.tieResolved, chosenBook: state.chosenBook, concludedAt: state.concludedAt, meeting: state.meeting || null };
 
   if (allVoted) {
     const voteCounts = {};
@@ -413,6 +414,15 @@ app.post('/api/reset', async (req, res) => {
   state.organizer = organizer;
   state.wishlist = wishlist;
   state.history = history;
+  await saveState();
+  res.json({ success: true });
+});
+
+// ── Meeting ───────────────────────────────────────────────────────────────
+
+app.post('/api/meeting', async (req, res) => {
+  const { place, datetime } = req.body;
+  state.meeting = { place: (place || '').trim(), datetime: datetime || null };
   await saveState();
   res.json({ success: true });
 });

@@ -915,11 +915,46 @@
     .wl-card-btn.on-wishlist { color: var(--mid-brown); border-color: var(--gold); background: var(--muted-gold); cursor: default; }
 
     /* ── History panel ── */
-    #history-panel {
+    #history-panel,
+    #meeting-panel {
       max-width: 760px;
       margin: 0 auto;
       padding: 2.5rem 1.25rem 4rem;
     }
+
+    input[type="datetime-local"] {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: inherit;
+      color: var(--brown);
+      background: var(--cream);
+      outline: none;
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+    input[type="datetime-local"]:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201,151,58,0.14);
+    }
+
+    .meeting-display {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding: 1.1rem 1.25rem;
+      background: var(--paper);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 1.75rem;
+    }
+    .meeting-display-datetime {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+    .meeting-display-place { font-size: 0.9rem; color: var(--gray); }
     .hist-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
     .hist-form-grid .form-group { margin-bottom: 0; }
     .hist-form-grid input[type="date"],
@@ -1064,6 +1099,7 @@
       main { padding: 1.25rem 1rem 3rem; }
       #wishlist-panel { padding: 1.25rem 1rem 3rem; }
       #history-panel { padding: 1.25rem 1rem 3rem; }
+      #meeting-panel { padding: 1.25rem 1rem 3rem; }
 
       /* Cards */
       .card { padding: 1.25rem; border-radius: 10px; }
@@ -1181,6 +1217,7 @@
   <button class="nav-item" data-nav="wishlist">Verlanglijst</button>
   <button class="nav-item" data-nav="history">Geschiedenis</button>
   <button class="nav-item" data-nav="organizer">Organisator kiezen</button>
+  <button class="nav-item" data-nav="meeting">Volgende meeting</button>
 </nav>
 
 <div id="current-book-banner" style="display:none">
@@ -1486,6 +1523,35 @@
   </div>
 </section>
 
+<section id="meeting-panel" style="display:none">
+  <div class="card">
+    <h2 style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;margin-bottom:1.5rem">Volgende meeting</h2>
+    <div id="meeting-display" style="display:none">
+      <div class="meeting-display">
+        <div class="meeting-display-datetime" id="meeting-display-datetime"></div>
+        <div class="meeting-display-place" id="meeting-display-place"></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="meeting-place">Locatie</label>
+      <input type="text" id="meeting-place" placeholder="bijv. De Koffiezaak" />
+    </div>
+    <div class="form-group">
+      <label>Datum & tijdstip</label>
+      <div style="display:flex;gap:0.6rem">
+        <div style="flex:1.4;position:relative">
+          <input type="text" id="meeting-date-text" placeholder="DD/MM/JJJJ" maxlength="10" style="padding-right:2.5rem" />
+          <span style="position:absolute;right:0.65rem;top:50%;transform:translateY(-50%);font-size:1rem;line-height:1;pointer-events:none">📅</span>
+          <input type="date" id="meeting-date-hidden" tabindex="-1" style="position:absolute;right:0;top:0;width:2.5rem;height:100%;opacity:0;cursor:pointer;z-index:1" />
+        </div>
+        <input type="text" id="meeting-time" placeholder="UU:MM" style="flex:1" />
+      </div>
+    </div>
+    <div id="meeting-error" style="display:none;color:#c0392b;font-size:0.85rem;margin-bottom:0.75rem"></div>
+    <button class="btn btn-gold" id="meeting-save-btn" style="width:100%">Opslaan</button>
+  </div>
+</section>
+
 <section id="organizer-panel" style="display:none">
   <div id="organizer-panel-inner">
     <h2 class="org-heading">Organisator kiezen</h2>
@@ -1605,6 +1671,7 @@
     renderWishlist(state);
     renderHistory(state);
     renderCurrentBook(state);
+    renderMeeting(state);
     if (state.members?.length) renderOrgMembers(state.members);
     render(state);
   }
@@ -2428,6 +2495,125 @@
     }
   });
 
+  // ── Meeting ────────────────────────────────────────────────────────────────
+
+  function setMeetingDateText(isoDate) {
+    if (!isoDate) return;
+    const [y, m, d] = isoDate.split('-');
+    document.getElementById('meeting-date-text').value = `${d}/${m}/${y}`;
+    document.getElementById('meeting-date-hidden').value = isoDate;
+  }
+
+  function parseMeetingDate() {
+    const text = document.getElementById('meeting-date-text').value.trim();
+    const m = text.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+    return document.getElementById('meeting-date-hidden').value || '';
+  }
+
+  function parseMeetingTime() {
+    const text = document.getElementById('meeting-time').value.trim();
+    const m = text.match(/^(\d{2}):(\d{2})$/);
+    return m ? `${m[1]}:${m[2]}` : '';
+  }
+
+  // ── Time input: digits-only + auto-format + clamping ───────────────────────
+  (function () {
+    const t = document.getElementById('meeting-time');
+    let _deleting = false;
+
+    t.addEventListener('keydown', e => {
+      _deleting = e.key === 'Backspace' || e.key === 'Delete';
+      if (['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Enter','Home','End'].includes(e.key)) return;
+      if (e.ctrlKey || e.metaKey) return;
+      if (!/^\d$/.test(e.key)) e.preventDefault();
+    });
+
+    t.addEventListener('input', () => {
+      let d = t.value.replace(/\D/g, '').slice(0, 4);
+
+      // Clamp hour first digit to 0–2
+      if (d.length >= 1 && parseInt(d[0]) > 2) d = '2' + d.slice(1);
+      // Clamp hour second digit to 0–3 when first is '2'
+      if (d.length >= 2 && d[0] === '2' && parseInt(d[1]) > 3) d = d[0] + '3' + d.slice(2);
+      // Clamp minute first digit to 0–5
+      if (d.length >= 3 && parseInt(d[2]) > 5) d = d.slice(0, 2) + '5' + d.slice(3);
+
+      if (d.length > 2) {
+        t.value = d.slice(0, 2) + ':' + d.slice(2);
+      } else if (d.length === 2 && !_deleting) {
+        t.value = d + ':';
+      } else {
+        t.value = d;
+      }
+    });
+  })();
+
+  document.getElementById('meeting-date-hidden').addEventListener('change', e => {
+    setMeetingDateText(e.target.value);
+  });
+
+  document.getElementById('meeting-date-text').addEventListener('input', e => {
+    const m = e.target.value.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    document.getElementById('meeting-date-hidden').value = m ? `${m[3]}-${m[2]}-${m[1]}` : '';
+  });
+
+  function renderMeeting(state) {
+    const meeting = state.meeting;
+    const hasData = meeting?.datetime || meeting?.place;
+    const panelOpen = document.getElementById('meeting-panel').style.display !== 'none';
+
+    document.getElementById('meeting-display').style.display = hasData ? '' : 'none';
+    if (hasData) {
+      if (meeting.datetime) {
+        const d = new Date(meeting.datetime);
+        document.getElementById('meeting-display-datetime').textContent =
+          '🗓 ' + d.toLocaleString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+      } else {
+        document.getElementById('meeting-display-datetime').textContent = '';
+      }
+      document.getElementById('meeting-display-place').textContent =
+        meeting.place ? '📍 ' + meeting.place : '';
+    }
+
+    if (panelOpen) return;
+
+    if (meeting?.datetime) {
+      const [date, time] = meeting.datetime.split('T');
+      setMeetingDateText(date);
+      document.getElementById('meeting-time').value = time || '';
+    } else {
+      document.getElementById('meeting-date-text').value = '';
+      document.getElementById('meeting-date-hidden').value = '';
+      document.getElementById('meeting-time').value = '';
+    }
+    document.getElementById('meeting-place').value = meeting?.place || '';
+  }
+
+  document.getElementById('meeting-save-btn').addEventListener('click', async () => {
+    const place = document.getElementById('meeting-place').value.trim();
+    const date = parseMeetingDate();
+    const time = parseMeetingTime();
+    const datetime = date ? `${date}T${time || '00:00'}` : '';
+    const errEl = document.getElementById('meeting-error');
+    errEl.style.display = 'none';
+
+    if (!place && !datetime) {
+      errEl.textContent = 'Vul een locatie of datum in.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const res = await fetch('/api/meeting', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ place, datetime }),
+    });
+
+    if (res.ok) fetchState();
+    else { errEl.textContent = 'Opslaan mislukt.'; errEl.style.display = 'block'; }
+  });
+
   // ── Nav / hamburger ────────────────────────────────────────────────────────
 
   const hamburgerBtn = document.getElementById('hamburger-btn');
@@ -2456,6 +2642,7 @@
     document.getElementById('wishlist-panel').style.display = page === 'wishlist' ? '' : 'none';
     document.getElementById('history-panel').style.display = page === 'history' ? '' : 'none';
     document.getElementById('organizer-panel').style.display = page === 'organizer' ? '' : 'none';
+    document.getElementById('meeting-panel').style.display = page === 'meeting' ? '' : 'none';
     navMenu.querySelectorAll('.nav-item').forEach(item => {
       item.classList.toggle('active', item.dataset.nav === page);
     });
