@@ -13,11 +13,14 @@
       --brown: #2c1810;
       --mid-brown: #5c3d2e;
       --gold: #c9973a;
+      --gold-hover: #b8870a;
       --light-gold: #f0e0b0;
       --muted-gold: #f8f0dc;
       --gray: #7a6655;
       --border: #ddd3c0;
       --white: #ffffff;
+      --surface-dark: #2c1810;
+      --surface-dark-hover: #3d2215;
       --shadow-sm: 0 1px 6px rgba(44,24,16,0.07);
       --shadow-md: 0 4px 20px rgba(44,24,16,0.11);
       --shadow-lg: 0 8px 40px rgba(44,24,16,0.17);
@@ -37,7 +40,7 @@
 
     /* ── Header ── */
     header {
-      background: var(--brown);
+      background: var(--surface-dark);
       color: var(--light-gold);
       padding: 1.25rem 1.5rem;
       display: flex;
@@ -90,9 +93,139 @@
     }
     .reset-btn:hover { opacity: 1; }
 
+    /* ── Colour scheme button & popover ── */
+    .scheme-btn {
+      background: transparent;
+      border: 1px solid rgba(240,224,176,0.35);
+      color: var(--light-gold);
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0.65;
+      transition: opacity 0.15s;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .scheme-btn:hover { opacity: 1; }
+    .scheme-popover {
+      position: absolute;
+      top: calc(100% + 0.5rem);
+      right: 0;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.75rem;
+      box-shadow: var(--shadow-lg);
+      display: none;
+      flex-direction: column;
+      gap: 0.35rem;
+      z-index: 200;
+      min-width: 9rem;
+    }
+    .scheme-popover.open { display: flex; }
+    .scheme-option {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+      color: var(--brown);
+      padding: 0.35rem 0.5rem;
+      border-radius: 7px;
+      white-space: nowrap;
+      transition: background 0.12s;
+    }
+    .scheme-option:hover { background: var(--paper); }
+    .scheme-option.active { font-weight: 600; }
+    .scheme-swatch {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1.5px solid rgba(0,0,0,0.12);
+    }
+
+    /* ── Colour schemes ── */
+    [data-scheme="merlot"] {
+      --cream: #1e0810;
+      --paper: #2e1020;
+      --brown: #f0dcc0;
+      --mid-brown: #d4b090;
+      --gold: #b82840;
+      --gold-hover: #9a1e30;
+      --light-gold: #f0dcc0;
+      --muted-gold: #3a1828;
+      --gray: #c09880;
+      --border: #5a2535;
+      --white: #2e1020;
+      --surface-dark: #100408;
+      --surface-dark-hover: #1e0810;
+      --book1: #8b1a2a;
+      --book2: #c04040;
+      --book3: #7b2030;
+    }
+    [data-scheme="chardonnay"] {
+      --cream: #f8fae8;
+      --paper: #f0f2d0;
+      --brown: #2a3818;
+      --mid-brown: #4a6028;
+      --gold: #98b820;
+      --gold-hover: #7a9810;
+      --light-gold: #f0f2d8;
+      --muted-gold: #f8faf0;
+      --gray: #6a7a48;
+      --border: #d8dca8;
+      --white: #ffffff;
+      --surface-dark: #3a5018;
+      --surface-dark-hover: #2a3c10;
+      --book1: #98b820;
+      --book2: #b8d038;
+      --book3: #7a9810;
+    }
+    [data-scheme="rose"] {
+      --cream: #fff5f8;
+      --paper: #ffe8f0;
+      --brown: #5c1a35;
+      --mid-brown: #8b3a5a;
+      --gold: #e8547a;
+      --gold-hover: #d03d63;
+      --light-gold: #ffeef5;
+      --muted-gold: #fff5f8;
+      --gray: #9e7080;
+      --border: #f0c8d8;
+      --white: #ffffff;
+      --surface-dark: #5c1a35;
+      --surface-dark-hover: #4a1228;
+      --book1: #e8547a;
+      --book2: #c83a60;
+      --book3: #f08aa0;
+    }
+    [data-scheme="champagne"] {
+      --cream: #fdfaf0;
+      --paper: #f8f3dc;
+      --brown: #3a2e08;
+      --mid-brown: #6a5420;
+      --gold: #a88818;
+      --gold-hover: #8a7010;
+      --light-gold: #3a2e08;
+      --muted-gold: #fefdf5;
+      --gray: #8a7840;
+      --border: #e8d888;
+      --white: #ffffff;
+      --surface-dark: #c8a828;
+      --surface-dark-hover: #b09020;
+      --book1: #c8a828;
+      --book2: #a08820;
+      --book3: #e0b830;
+    }
+
     /* ── Currently reading banner ── */
     #current-book-banner {
-      background: var(--brown);
+      background: var(--surface-dark);
       border-bottom: 1px solid rgba(240,224,176,0.12);
     }
     #current-book-inner {
@@ -360,16 +493,16 @@
     .btn:active { transform: scale(0.985); }
 
     .btn-primary {
-      background: var(--brown);
+      background: var(--surface-dark);
       color: var(--light-gold);
     }
-    .btn-primary:hover { background: #3d2215; }
+    .btn-primary:hover { background: var(--surface-dark-hover); }
 
     .btn-gold {
       background: var(--gold);
       color: #fff;
     }
-    .btn-gold:hover { background: #b8870a; }
+    .btn-gold:hover { background: var(--gold-hover); }
 
     .btn-secondary {
       background: var(--paper);
@@ -521,6 +654,7 @@
       justify-content: center;
       margin-top: 0;
     }
+    .hist-rate-btn { font-style: normal; color: var(--gold); }
 
     /* ── Book detail modal ── */
     .book-modal-overlay {
@@ -585,6 +719,89 @@
       padding-top: 1rem;
     }
     .book-modal-loading { font-size: 0.88rem; color: var(--gray); font-style: italic; }
+    .book-modal-ratings {
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .book-modal-ratings:empty { display: none; }
+    .book-modal-ratings-title { font-size: 0.8rem; font-weight: 600; color: var(--mid-brown); margin-bottom: 0.35rem; }
+
+    /* ── Star rating modal ── */
+    #current-book-banner { cursor: pointer; }
+    #current-book-banner:hover #current-book-inner { opacity: 0.85; }
+    .rating-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(44,24,16,0.55);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .rating-overlay.open { opacity: 1; pointer-events: auto; }
+    .rating-modal {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 1.75rem;
+      max-width: 360px;
+      width: 100%;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+      text-align: center;
+    }
+    .rating-modal-close {
+      position: absolute;
+      top: 1rem; right: 1rem;
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+      color: var(--gray);
+      line-height: 1;
+      padding: 0.25rem;
+      font-family: inherit;
+    }
+    .rating-modal-close:hover { color: var(--brown); }
+    .rating-modal-book { font-family: 'Playfair Display', serif; font-size: 1.05rem; font-weight: 700; margin-bottom: 0.25rem; padding-right: 1.5rem; }
+    .rating-modal-author { font-size: 0.85rem; color: var(--gray); font-style: italic; margin-bottom: 1.5rem; }
+    .star-row { display: flex; justify-content: center; gap: 0.35rem; margin-bottom: 1.5rem; }
+    .star-btn {
+      background: none;
+      border: none;
+      font-size: 2rem;
+      cursor: pointer;
+      color: var(--border);
+      line-height: 1;
+      padding: 0.1rem;
+      transition: color 0.1s, transform 0.1s;
+    }
+    .star-btn.active { color: var(--gold); }
+    .star-btn:hover { transform: scale(1.15); }
+    .rating-save-btn { width: 100%; }
+
+    /* ── History ratings display ── */
+    .hist-ratings {
+      margin-top: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+    .hist-rating-row {
+      display: flex;
+      align-items: center;
+      font-size: 0.8rem;
+      color: var(--gray);
+    }
+    .hist-rating-name { min-width: 7rem; }
+    .hist-rating-stars { color: var(--gold); letter-spacing: 0.05em; }
 
     /* ── Alert ── */
     .alert {
@@ -709,7 +926,7 @@
 
     /* ── Results ── */
     .winner-banner {
-      background: linear-gradient(135deg, var(--brown) 0%, #4a2518 100%);
+      background: linear-gradient(135deg, var(--surface-dark) 0%, var(--surface-dark-hover) 100%);
       color: var(--light-gold);
       border-radius: 14px;
       padding: 2rem 2rem 1.75rem;
@@ -1053,7 +1270,7 @@
 
     /* ── Nav menu ── */
     .nav-menu {
-      background: var(--brown);
+      background: var(--surface-dark);
       border-bottom: 1px solid rgba(240,224,176,0.12);
       overflow: hidden;
       max-height: 0;
@@ -1205,6 +1422,16 @@
   <div class="header-right">
     <span class="header-user" id="header-user"></span>
     <span class="organizer-badge" id="organizer-badge" style="display:none">Organisator</span>
+    <div style="position:relative">
+      <button class="scheme-btn" id="scheme-btn" aria-label="Kleurschema">&#9680;</button>
+      <div class="scheme-popover" id="scheme-popover">
+        <button class="scheme-option" data-scheme-pick="default"><span class="scheme-swatch" style="background:#c9973a"></span>Klassiek</button>
+        <button class="scheme-option" data-scheme-pick="merlot"><span class="scheme-swatch" style="background:#6e1428"></span>Merlot</button>
+        <button class="scheme-option" data-scheme-pick="chardonnay"><span class="scheme-swatch" style="background:#98b820"></span>Chardonnay</button>
+        <button class="scheme-option" data-scheme-pick="rose"><span class="scheme-swatch" style="background:#e8547a"></span>Rosé</button>
+        <button class="scheme-option" data-scheme-pick="champagne"><span class="scheme-swatch" style="background:#c8a828"></span>Champagne</button>
+      </div>
+    </div>
     <button class="hamburger-btn" id="hamburger-btn" aria-label="Menu" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
@@ -1571,6 +1798,22 @@
   </div>
 </section>
 
+<div id="rating-overlay" class="rating-overlay" role="dialog" aria-modal="true">
+  <div class="rating-modal">
+    <button class="rating-modal-close" id="rating-close" aria-label="Sluiten">&times;</button>
+    <div class="rating-modal-book" id="rating-book-title"></div>
+    <div class="rating-modal-author" id="rating-book-author"></div>
+    <div class="star-row" id="star-row">
+      <button class="star-btn" data-star="1">&#9733;</button>
+      <button class="star-btn" data-star="2">&#9733;</button>
+      <button class="star-btn" data-star="3">&#9733;</button>
+      <button class="star-btn" data-star="4">&#9733;</button>
+      <button class="star-btn" data-star="5">&#9733;</button>
+    </div>
+    <button class="btn btn-gold rating-save-btn" id="rating-save-btn">Opslaan</button>
+  </div>
+</div>
+
 <div id="book-modal-overlay" class="book-modal-overlay" role="dialog" aria-modal="true">
   <div class="book-modal">
     <button class="book-modal-close" id="book-modal-close" aria-label="Sluiten">&times;</button>
@@ -1583,6 +1826,7 @@
       </div>
     </div>
     <div class="book-modal-description" id="book-modal-description"></div>
+    <div class="book-modal-ratings" id="book-modal-ratings"></div>
   </div>
 </div>
 
@@ -2378,11 +2622,13 @@
       const dateStr = entry.date
         ? new Date(entry.date + 'T12:00:00').toLocaleDateString('nl-NL', { year: 'numeric', month: 'short', day: 'numeric' })
         : '';
+      const ratingsJson = JSON.stringify(entry.ratings || {}).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
       return `<div class="hist-item${isCurrent ? ' hist-item-current' : ''}">
         <div class="hist-item-header">
           <div class="hist-date-heading">☑ ${dateStr}</div>
           <div class="hist-actions">
-            <button class="book-info-btn" data-info-title="${esc(book.title||'')}" data-info-author="${esc(book.author||'')}" data-info-cover="${esc(book.coverUrl||'')}" data-info-pages="${book.pageCount||''}">i</button>
+            <button class="book-info-btn" data-info-title="${esc(book.title||'')}" data-info-author="${esc(book.author||'')}" data-info-cover="${esc(book.coverUrl||'')}" data-info-pages="${book.pageCount||''}" data-info-ratings="${ratingsJson}">i</button>
+            <button class="book-info-btn hist-rate-btn" data-rate-hist="${esc(entry.id)}" title="Beoordelen">★</button>
             <button class="hist-edit-btn" data-edit-hist="${esc(entry.id)}" title="Bewerken">✏️</button>
             <button class="hist-remove-btn" data-remove-hist="${esc(entry.id)}" title="Verwijderen">&times;</button>
           </div>
@@ -2465,6 +2711,12 @@
   });
 
   document.addEventListener('click', async e => {
+    const rateBtn = e.target.closest('[data-rate-hist]');
+    if (rateBtn) {
+      openRatingModal(rateBtn.dataset.rateHist);
+      return;
+    }
+
     const removeBtn = e.target.closest('[data-remove-hist]');
     if (removeBtn) {
       const id = removeBtn.dataset.removeHist;
@@ -2661,7 +2913,16 @@
 
   // ── Organizer wheel ────────────────────────────────────────────────────────
 
-  const WHEEL_COLORS = ['#c8a76d','#8b5d3b','#d4b895','#6b4226','#b8956a','#7a4c2c','#e0c890','#5a3520','#a07848','#4a2c18'];
+  const WHEEL_COLOR_SETS = {
+    default:    ['#c8a76d','#8b5d3b','#d4b895','#6b4226','#b8956a','#7a4c2c','#e0c890','#5a3520','#a07848','#4a2c18'],
+    merlot:     ['#8b1a2a','#c04040','#6b1a30','#a03040','#7b2030','#d05050','#5a1020','#b83838','#902838','#e06060'],
+    chardonnay: ['#98b820','#b8d038','#7a9810','#c8e050','#5a7808','#d0e870','#486808','#a8c830','#88a818','#c0d840'],
+    rose:       ['#e8547a','#c83a60','#f08aa0','#d04870','#f0a0b8','#b82858','#f5c0d0','#e06888','#c04068','#f8d0dc'],
+    champagne:  ['#c8a828','#a08820','#e0c840','#806810','#d8b830','#b89820','#f0d858','#906808','#c8a020','#e8c030'],
+  };
+  function getWheelColors() {
+    return WHEEL_COLOR_SETS[document.documentElement.getAttribute('data-scheme') || 'default'] || WHEEL_COLOR_SETS.default;
+  }
 
   let orgSelected = new Set();
 
@@ -2709,6 +2970,8 @@
   });
 
   function drawWheel(members, rotation) {
+    currentWheelMembers = members;
+    currentWheelRotation = rotation;
     const canvas = document.getElementById('org-wheel');
     const ctx = canvas.getContext('2d');
     const cx = canvas.width / 2;
@@ -2728,7 +2991,7 @@
       ctx.moveTo(cx, cy);
       ctx.arc(cx, cy, r, start, end);
       ctx.closePath();
-      ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length];
+      ctx.fillStyle = getWheelColors()[i % getWheelColors().length];
       ctx.fill();
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = 2;
@@ -2757,6 +3020,8 @@
   }
 
   let spinAnimId = null;
+  let currentWheelRotation = 0;
+  let currentWheelMembers = [];
 
   function spinWheel() {
     const members = Array.from(orgSelected);
@@ -2809,6 +3074,42 @@
     document.getElementById('org-spin-btn').disabled = orgSelected.size < 2;
   });
 
+  // ── Colour scheme ─────────────────────────────────────────────────────────
+
+  function applyScheme(scheme) {
+    if (scheme && scheme !== 'default') {
+      document.documentElement.setAttribute('data-scheme', scheme);
+    } else {
+      document.documentElement.removeAttribute('data-scheme');
+    }
+    localStorage.setItem('bc_scheme', scheme || 'default');
+    document.querySelectorAll('[data-scheme-pick]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.schemePick === (scheme || 'default'));
+    });
+    const wheelWrap = document.getElementById('org-wheel-wrap');
+    if (wheelWrap && wheelWrap.style.display !== 'none' && currentWheelMembers.length) {
+      drawWheel(currentWheelMembers, currentWheelRotation);
+    }
+  }
+
+  document.getElementById('scheme-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    document.getElementById('scheme-popover').classList.toggle('open');
+  });
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#scheme-popover') && !e.target.closest('#scheme-btn')) {
+      document.getElementById('scheme-popover').classList.remove('open');
+    }
+    const pick = e.target.closest('[data-scheme-pick]');
+    if (pick) {
+      applyScheme(pick.dataset.schemePick);
+      document.getElementById('scheme-popover').classList.remove('open');
+    }
+  });
+
+  applyScheme(localStorage.getItem('bc_scheme') || 'default');
+
   // ── Boot ───────────────────────────────────────────────────────────────────
 
   async function boot() {
@@ -2844,6 +3145,17 @@
         .catch(() => { descEl.textContent = 'Beschrijving kon niet geladen worden.'; });
     }
 
+    const ratingsEl = document.getElementById('book-modal-ratings');
+    const entries = Object.entries(book.ratings || {});
+    if (entries.length) {
+      ratingsEl.innerHTML = `<div class="book-modal-ratings-title">Beoordelingen</div>` +
+        entries.map(([user, stars]) =>
+          `<div class="hist-rating-row"><span class="hist-rating-name">${esc(user)}</span><span class="hist-rating-stars">${'★'.repeat(stars)}${'☆'.repeat(5 - stars)}</span></div>`
+        ).join('');
+    } else {
+      ratingsEl.innerHTML = '';
+    }
+
     overlay.classList.add('open');
   }
 
@@ -2856,18 +3168,94 @@
   });
 
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') document.getElementById('book-modal-overlay').classList.remove('open');
+    if (e.key === 'Escape') {
+      document.getElementById('book-modal-overlay').classList.remove('open');
+      document.getElementById('rating-overlay').classList.remove('open');
+    }
   });
 
   document.addEventListener('click', e => {
     const btn = e.target.closest('[data-info-title]');
     if (!btn) return;
+    let ratings = {};
+    try { ratings = JSON.parse(btn.dataset.infoRatings || '{}'); } catch (_) {}
     openBookModal({
       title: btn.dataset.infoTitle,
       author: btn.dataset.infoAuthor || '',
       coverUrl: btn.dataset.infoCover || null,
       pageCount: btn.dataset.infoPages ? parseInt(btn.dataset.infoPages) : null,
+      ratings,
     });
+  });
+
+  // ── Star rating modal ──────────────────────────────────────────────────────
+
+  let ratingHistId = null;
+  let selectedStars = 0;
+
+  function setStars(n) {
+    selectedStars = n;
+    document.querySelectorAll('.star-btn').forEach(btn => {
+      btn.classList.toggle('active', parseInt(btn.dataset.star) <= n);
+    });
+  }
+
+  function openRatingModal(histId) {
+    const state = window._lastState;
+    if (!state?.history?.length) return;
+    const entry = histId
+      ? state.history.find(h => h.id === histId)
+      : state.history.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
+    if (!entry) return;
+    ratingHistId = entry.id;
+    const book = entry.book || {};
+    document.getElementById('rating-book-title').textContent = book.title || '';
+    document.getElementById('rating-book-author').textContent = book.author || '';
+    const existing = (entry.ratings || {})[currentUser] || 0;
+    setStars(existing);
+    document.getElementById('rating-overlay').classList.add('open');
+  }
+
+  document.getElementById('current-book-banner').addEventListener('click', () => openRatingModal());
+
+  document.getElementById('rating-close').addEventListener('click', () => {
+    document.getElementById('rating-overlay').classList.remove('open');
+  });
+
+  document.getElementById('rating-overlay').addEventListener('click', e => {
+    if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+  });
+
+  document.getElementById('star-row').addEventListener('click', e => {
+    const btn = e.target.closest('.star-btn');
+    if (!btn) return;
+    setStars(parseInt(btn.dataset.star));
+  });
+
+  document.getElementById('star-row').addEventListener('mouseover', e => {
+    const btn = e.target.closest('.star-btn');
+    if (!btn) return;
+    const n = parseInt(btn.dataset.star);
+    document.querySelectorAll('.star-btn').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.star) <= n);
+    });
+  });
+
+  document.getElementById('star-row').addEventListener('mouseleave', () => {
+    setStars(selectedStars);
+  });
+
+  document.getElementById('rating-save-btn').addEventListener('click', async () => {
+    if (!selectedStars || !ratingHistId) return;
+    const res = await fetch(`/api/history/${ratingHistId}/rate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stars: selectedStars }),
+    });
+    if (res.ok) {
+      document.getElementById('rating-overlay').classList.remove('open');
+      fetchState();
+    }
   });
 
   boot();

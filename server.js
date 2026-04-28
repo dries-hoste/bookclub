@@ -49,6 +49,7 @@ function migrate(data) {
   if (!('tieResolved' in data)) data.tieResolved = false;
   if (!('chosenBook' in data)) data.chosenBook = null;
   if (!('meeting' in data)) data.meeting = null;
+  data.history.forEach(e => { if (!e.ratings) e.ratings = {}; });
   return data;
 }
 
@@ -374,7 +375,8 @@ app.put('/api/history/:id', async (req, res) => {
   if (!date) return res.status(400).json({ error: 'Date is required.' });
   if (!organizer?.trim()) return res.status(400).json({ error: 'Organizer is required.' });
   if (!book?.title?.trim()) return res.status(400).json({ error: 'Book title is required.' });
-  state.history[idx] = { id, date, organizer: organizer.trim(), book: { title: book.title.trim(), author: (book.author || '').trim(), pageCount: book.pageCount || null, coverUrl: book.coverUrl || null } };
+  const existingRatings = state.history[idx].ratings || {};
+  state.history[idx] = { id, date, organizer: organizer.trim(), book: { title: book.title.trim(), author: (book.author || '').trim(), pageCount: book.pageCount || null, coverUrl: book.coverUrl || null }, ratings: existingRatings };
   await saveState();
   res.json({ success: true });
 });
@@ -385,6 +387,19 @@ app.delete('/api/history/:id', async (req, res) => {
   const before = state.history.length;
   state.history = state.history.filter(h => h.id !== id);
   if (state.history.length === before) return res.status(404).json({ error: 'Not found.' });
+  await saveState();
+  res.json({ success: true });
+});
+
+app.post('/api/history/:id/rate', async (req, res) => {
+  const { id } = req.params;
+  const { stars } = req.body;
+  if (!state.history) return res.status(404).json({ error: 'Not found.' });
+  const entry = state.history.find(h => h.id === id);
+  if (!entry) return res.status(404).json({ error: 'Not found.' });
+  if (!Number.isInteger(stars) || stars < 1 || stars > 5) return res.status(400).json({ error: 'Geef 1 tot 5 sterren.' });
+  if (!entry.ratings) entry.ratings = {};
+  entry.ratings[req.auth.user] = stars;
   await saveState();
   res.json({ success: true });
 });
