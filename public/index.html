@@ -1588,6 +1588,7 @@
         <div id="books-grid" class="books-grid"></div>
 
         <button class="btn btn-gold" id="vote-btn">Stem uitbrengen</button>
+        <button class="btn btn-secondary" id="vote-cancel-btn" style="margin-top:0.5rem;display:none">Annuleer</button>
 
         <div id="report-read-row" style="margin-top:0.75rem;display:none">
           <button class="btn btn-secondary" id="report-read-btn">Ik heb deze boeken al gelezen - verstuur naar de organisator</button>
@@ -1635,6 +1636,7 @@
 
       <p class="hint">Resultaten zijn verborgen totdat iedereen heeft gestemd. Deze pagina ververst automatisch.</p>
       <p class="hint" style="margin-top:0.5rem">Wil je deze ronde leiden? <button class="link-btn" data-take-organizer>Word de organisator &rarr;</button></p>
+      <p class="hint" style="margin-top:0.5rem" id="edit-vote-row"><button class="link-btn" id="edit-vote-btn">Stem of selectie wijzigen &rarr;</button></p>
     </div>
   </div>
 
@@ -1842,6 +1844,7 @@
   let editingHistId = null;
   let waitingForBookUpdate = false;
   let reportedBookTitles = null;
+  let editingVote = false;
   const bookMeta = {}; // { 1: { pageCount, coverUrl }, 2: ..., 3: ... }
   let editMode = false;
 
@@ -1931,6 +1934,7 @@
     const hasVoted = currentUser && state.voterNames && state.voterNames.includes(currentUser);
 
     if (state.allVoted) {
+      editingVote = false;
       const counts = state.voteCounts || {};
       const maxVotes = Math.max(...Object.values(counts), 0);
       const isTie = state.books.filter(b => (counts[b.title] || 0) === maxVotes).length > 1;
@@ -1970,7 +1974,7 @@
       if (state.phase === 'setup') {
         showView('landing-view');
         startPolling();
-      } else if (hasVoted) {
+      } else if (hasVoted && !editingVote) {
         showView('waiting-view');
         renderWaiting(state);
         startPolling();
@@ -2202,14 +2206,20 @@
   function renderVoteView(state) {
     document.getElementById('vote-step-2').style.display = 'block';
     document.getElementById('vote-step-waiting').style.display = 'none';
-    document.getElementById('report-read-row').style.display = 'none';
     document.getElementById('report-read-success').style.display = 'none';
-    selectedBook = null;
+    const isEditing = editingVote && !!state.myVote;
+    selectedBook = isEditing ? state.myVote : null;
     pendingVoterName = currentUser;
     hideError('vote-error');
-    document.getElementById('voting-as-pill').textContent = `Stemmen als: ${currentUser}`;
+    document.getElementById('voting-as-pill').textContent = isEditing
+      ? `Je stem wijzigen — ${currentUser}`
+      : `Stemmen als: ${currentUser}`;
+    document.getElementById('vote-btn').textContent = isEditing ? 'Stem bijwerken' : 'Stem uitbrengen';
+    document.getElementById('vote-cancel-btn').style.display = isEditing ? 'inline-flex' : 'none';
+    document.getElementById('report-read-btn').style.display = isEditing ? 'none' : 'inline-flex';
 
     // Pre-render books for step 2
+    const myReadSet = new Set(state.myAlreadyRead || []);
     const grid = document.getElementById('books-grid');
     grid.innerHTML = state.books.map(book => {
       const readCount = state.alreadyReadCounts?.[book.title] || 0;
@@ -2217,8 +2227,10 @@
                       : readCount > 1  ? `${readCount} leden hebben dit al gelezen`
                       : '';
       const onWishlist = (state.wishlist || []).some(w => w.title === book.title);
+      const isSelected = selectedBook === book.title;
+      const isRead = myReadSet.has(book.title);
       return `
-        <div class="book-card" data-title="${esc(book.title)}" tabindex="0" role="button">
+        <div class="book-card${isSelected ? ' selected' : ''}" data-title="${esc(book.title)}" tabindex="0" role="button">
           ${book.coverUrl
             ? `<img class="book-card-cover" src="${esc(book.coverUrl)}" alt="" />`
             : `<div class="book-icon">📖</div>`}
@@ -2227,7 +2239,7 @@
           ${book.pageCount ? `<div class="book-card-pages">${book.pageCount} pages</div>` : ''}
           ${readLabel ? `<div class="already-read-info">${readLabel}</div>` : ''}
           <label class="already-read-label" onclick="event.stopPropagation()">
-            <input type="checkbox" class="already-read-cb" data-book="${esc(book.title)}" onclick="event.stopPropagation()" />
+            <input type="checkbox" class="already-read-cb" data-book="${esc(book.title)}" onclick="event.stopPropagation()" ${isRead ? 'checked' : ''} />
             Ik heb dit al gelezen
           </label>
           <button class="wl-card-btn${onWishlist ? ' on-wishlist' : ''}" data-wl-book="${esc(book.title)}" ${onWishlist ? 'disabled' : ''} onclick="event.stopPropagation()">${onWishlist ? '✓ Op verlanglijst' : '+ Verlanglijst'}</button>
@@ -2235,6 +2247,10 @@
         </div>
       `;
     }).join('');
+
+    // Show the report-read row if (non-editing) user has prefilled checks
+    const showReportRow = !isEditing && myReadSet.size > 0;
+    document.getElementById('report-read-row').style.display = showReportRow ? 'block' : 'none';
 
     grid.querySelectorAll('.book-card').forEach(card => {
       const select = e => {
@@ -2250,8 +2266,10 @@
 
     grid.addEventListener('change', e => {
       if (!e.target.classList.contains('already-read-cb')) return;
+      if (isEditing) return; // editing flow saves via vote-btn, not report-read-btn
       const anyChecked = [...grid.querySelectorAll('.already-read-cb:checked')].length > 0;
-      document.getElementById('report-read-row').style.display = anyChecked ? 'block' : 'none';
+      const hadPrefilled = myReadSet.size > 0;
+      document.getElementById('report-read-row').style.display = (anyChecked || hadPrefilled) ? 'block' : 'none';
       document.getElementById('report-read-success').style.display = 'none';
     });
 
@@ -2281,6 +2299,12 @@
     startPolling();
   });
 
+  document.getElementById('vote-cancel-btn').addEventListener('click', () => {
+    editingVote = false;
+    hideError('vote-error');
+    fetchState();
+  });
+
   document.getElementById('vote-btn').addEventListener('click', async () => {
     hideError('vote-error');
     if (!selectedBook) return showError('vote-error', 'Selecteer een boek.');
@@ -2294,7 +2318,12 @@
     });
     const data = await res.json();
 
-    if (!res.ok) return showError('vote-error', data.error);
+    if (!res.ok) {
+      showError('vote-error', data.error);
+      if (editingVote) fetchState();
+      return;
+    }
+    editingVote = false;
 
     fetchState();
   });
@@ -2318,7 +2347,15 @@
     } else {
       pill.style.display = 'none';
     }
+
+    document.getElementById('edit-vote-row').style.display = state.allVoted ? 'none' : '';
   }
+
+  document.getElementById('edit-vote-btn').addEventListener('click', () => {
+    if (window._lastState?.allVoted) return;
+    editingVote = true;
+    if (window._lastState) render(window._lastState);
+  });
 
 
   // ── Tie-breaker view ───────────────────────────────────────────────────────

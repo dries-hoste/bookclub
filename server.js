@@ -210,7 +210,11 @@ app.get('/api/state', (req, res) => {
     });
   });
 
-  const response = { phase: state.phase, books: state.books, expectedVoters: state.expectedVoters, voteCount, voterNames, allVoted, alreadyReadCounts, alreadyReadNames, organizer: state.organizer || null, wishlist: state.wishlist || [], history: state.history || [], members, tieResolved: state.tieResolved, chosenBook: state.chosenBook, concludedAt: state.concludedAt, meeting: state.meeting || null };
+  const me = req.auth?.user;
+  const myVote = me && state.votes[me] ? state.votes[me] : null;
+  const myAlreadyRead = me && state.alreadyRead[me] ? state.alreadyRead[me] : [];
+
+  const response = { phase: state.phase, books: state.books, expectedVoters: state.expectedVoters, voteCount, voterNames, allVoted, alreadyReadCounts, alreadyReadNames, organizer: state.organizer || null, wishlist: state.wishlist || [], history: state.history || [], members, tieResolved: state.tieResolved, chosenBook: state.chosenBook, concludedAt: state.concludedAt, meeting: state.meeting || null, myVote, myAlreadyRead };
 
   if (allVoted) {
     const voteCounts = {};
@@ -259,13 +263,15 @@ app.post('/api/vote', async (req, res) => {
   if (state.phase !== 'voting') return res.status(400).json({ error: 'Voting is not open.' });
 
   const normalizedName = name.trim();
-  if (state.votes[normalizedName]) return res.status(400).json({ error: 'You have already voted.' });
+  const wasAllVoted = state.expectedVoters > 0 && Object.keys(state.votes).length >= state.expectedVoters;
+  if (wasAllVoted) return res.status(400).json({ error: 'Voting is closed — everyone has voted.' });
   if (!state.books.some(b => b.title === bookTitle)) return res.status(400).json({ error: 'Invalid book selection.' });
 
   state.votes[normalizedName] = bookTitle;
-  if (Array.isArray(alreadyRead) && alreadyRead.length > 0) {
+  if (Array.isArray(alreadyRead)) {
     const valid = alreadyRead.filter(t => state.books.some(b => b.title === t));
     if (valid.length > 0) state.alreadyRead[normalizedName] = valid;
+    else delete state.alreadyRead[normalizedName];
   }
 
   const allVoted = Object.keys(state.votes).length >= state.expectedVoters;
@@ -297,13 +303,15 @@ app.post('/api/report-read', async (req, res) => {
   const { name, alreadyRead } = req.body;
   if (!name?.trim()) return res.status(400).json({ error: 'Please enter your name.' });
   if (state.phase !== 'voting') return res.status(400).json({ error: 'Voting is not open.' });
-  if (!Array.isArray(alreadyRead) || alreadyRead.length === 0) return res.status(400).json({ error: 'Please select at least one book.' });
+  if (!Array.isArray(alreadyRead)) return res.status(400).json({ error: 'Invalid selection.' });
+
+  const wasAllVoted = state.expectedVoters > 0 && Object.keys(state.votes).length >= state.expectedVoters;
+  if (wasAllVoted) return res.status(400).json({ error: 'Voting is closed — everyone has voted.' });
 
   const normalizedName = name.trim();
   const valid = alreadyRead.filter(t => state.books.some(b => b.title === t));
-  if (valid.length === 0) return res.status(400).json({ error: 'No valid books selected.' });
-
-  state.alreadyRead[normalizedName] = valid;
+  if (valid.length > 0) state.alreadyRead[normalizedName] = valid;
+  else delete state.alreadyRead[normalizedName];
   await saveState();
   res.json({ success: true });
 });
