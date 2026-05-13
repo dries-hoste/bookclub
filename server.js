@@ -38,7 +38,7 @@ app.use(express.static('public'));
 // ── Storage ────────────────────────────────────────────────────────────────
 
 function defaultState() {
-  return { books: [], expectedVoters: 0, votes: {}, alreadyRead: {}, phase: 'setup', organizer: null, wishlist: [], history: [], concludedAt: null, tieResolved: false, chosenBook: null, meeting: null };
+  return { books: [], expectedVoters: 0, votes: {}, alreadyRead: {}, phase: 'setup', organizer: null, wishlist: [], history: [], concludedAt: null, tieResolved: false, chosenBook: null, meeting: null, revealed: false };
 }
 
 function migrate(data) {
@@ -49,6 +49,7 @@ function migrate(data) {
   if (!('tieResolved' in data)) data.tieResolved = false;
   if (!('chosenBook' in data)) data.chosenBook = null;
   if (!('meeting' in data)) data.meeting = null;
+  if (!('revealed' in data)) data.revealed = false;
   data.history.forEach(e => { if (!e.ratings) e.ratings = {}; });
   return data;
 }
@@ -110,6 +111,19 @@ if (process.env.DATABASE_URL) {
 
 let state;
 async function saveState() { await storage.save(state); }
+
+function todayLocal() {
+  return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in server-local TZ
+}
+
+function meetingDateOf(s) {
+  return s.meeting?.datetime?.slice(0, 10) || null;
+}
+
+function isVotingOpen(s) {
+  const md = meetingDateOf(s);
+  return !!md && md === todayLocal();
+}
 
 // ── Book lookup ────────────────────────────────────────────────────────────
 
@@ -214,9 +228,9 @@ app.get('/api/state', (req, res) => {
   const myVote = me && state.votes[me] ? state.votes[me] : null;
   const myAlreadyRead = me && state.alreadyRead[me] ? state.alreadyRead[me] : [];
 
-  const response = { phase: state.phase, books: state.books, expectedVoters: state.expectedVoters, voteCount, voterNames, allVoted, alreadyReadCounts, alreadyReadNames, organizer: state.organizer || null, wishlist: state.wishlist || [], history: state.history || [], members, tieResolved: state.tieResolved, chosenBook: state.chosenBook, concludedAt: state.concludedAt, meeting: state.meeting || null, myVote, myAlreadyRead };
+  const response = { phase: state.phase, books: state.books, expectedVoters: state.expectedVoters, voteCount, voterNames, allVoted, alreadyReadCounts, alreadyReadNames, organizer: state.organizer || null, wishlist: state.wishlist || [], history: state.history || [], members, tieResolved: state.tieResolved, chosenBook: state.chosenBook, concludedAt: state.concludedAt, meeting: state.meeting || null, myVote, myAlreadyRead, votingOpen: isVotingOpen(state), meetingDate: meetingDateOf(state), revealed: !!state.revealed };
 
-  if (allVoted) {
+  if (allVoted && state.revealed) {
     const voteCounts = {};
     state.books.forEach(b => { voteCounts[b.title] = 0; });
     Object.values(state.votes).forEach(t => { voteCounts[t] = (voteCounts[t] || 0) + 1; });
@@ -239,7 +253,7 @@ app.post('/api/setup', async (req, res) => {
   const clean = cleanBooks(books);
   if (clean.length < 2) return res.status(400).json({ error: 'Please provide at least 2 valid book titles.' });
   const expectedVoters = Math.max(1, members.length - 1);
-  state = { books: clean, expectedVoters, votes: {}, alreadyRead: {}, phase: 'voting', organizer: state.organizer, wishlist: state.wishlist, history: state.history || [], concludedAt: null, tieResolved: false, chosenBook: null };
+  state = { books: clean, expectedVoters, votes: {}, alreadyRead: {}, phase: 'voting', organizer: state.organizer, wishlist: state.wishlist, history: state.history || [], concludedAt: null, tieResolved: false, chosenBook: null, revealed: false };
   await saveState();
   res.json({ success: true });
 });
@@ -252,6 +266,7 @@ app.post('/api/edit-books', async (req, res) => {
   state.books = clean;
   state.votes = {};
   state.alreadyRead = {};
+  state.revealed = false;
   await saveState();
   res.json({ success: true });
 });
@@ -265,6 +280,10 @@ app.post('/api/vote', async (req, res) => {
   const normalizedName = name.trim();
   const wasAllVoted = state.expectedVoters > 0 && Object.keys(state.votes).length >= state.expectedVoters;
   if (wasAllVoted) return res.status(400).json({ error: 'Voting is closed — everyone has voted.' });
+  if (!isVotingOpen(state)) {
+    const md = meetingDateOf(state);
+    return res.status(400).json({ error: md ? 'Stemmen kan enkel op de dag van de meeting.' : 'De organisator moet eerst een meetingdatum prikken.' });
+  }
   if (!state.books.some(b => b.title === bookTitle)) return res.status(400).json({ error: 'Invalid book selection.' });
 
   state.votes[normalizedName] = bookTitle;
@@ -312,6 +331,18 @@ app.post('/api/report-read', async (req, res) => {
   const valid = alreadyRead.filter(t => state.books.some(b => b.title === t));
   if (valid.length > 0) state.alreadyRead[normalizedName] = valid;
   else delete state.alreadyRead[normalizedName];
+  await saveState();
+  res.json({ success: true });
+});
+
+app.post('/api/reveal', async (req, res) => {
+  if (req.auth.user !== state.organizer) return res.status(403).json({ error: 'Alleen de organisator kan het resultaat onthullen.' });
+  if (state.phase !== 'voting') return res.status(400).json({ error: 'Voting is not open.' });
+  const voteCount = Object.keys(state.votes).length;
+  if (!(state.expectedVoters > 0 && voteCount >= state.expectedVoters)) {
+    return res.status(400).json({ error: 'Nog niet iedereen heeft gestemd.' });
+  }
+  state.revealed = true;
   await saveState();
   res.json({ success: true });
 });
@@ -445,6 +476,9 @@ app.post('/api/reset', async (req, res) => {
 
 app.post('/api/meeting', async (req, res) => {
   const { place, datetime } = req.body;
+  if (datetime && datetime.slice(0, 10) < todayLocal()) {
+    return res.status(400).json({ error: 'De meetingdatum kan niet in het verleden liggen.' });
+  }
   state.meeting = { place: (place || '').trim(), datetime: datetime || null };
   await saveState();
   res.json({ success: true });

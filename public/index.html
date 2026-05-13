@@ -821,6 +821,11 @@
       color: #166534;
       border: 1px solid #bbf7d0;
     }
+    .alert-info {
+      background: #fffaf0;
+      color: #7c4a03;
+      border: 1px solid #fcd9a4;
+    }
 
     /* ── Progress box (shared by waiting + admin views) ── */
     .progress-box {
@@ -1587,6 +1592,7 @@
 
         <div id="books-grid" class="books-grid"></div>
 
+        <div id="vote-closed-notice" class="alert alert-info"></div>
         <button class="btn btn-gold" id="vote-btn">Stem uitbrengen</button>
         <button class="btn btn-secondary" id="vote-cancel-btn" style="margin-top:0.5rem;display:none">Annuleer</button>
 
@@ -1617,9 +1623,9 @@
   <div id="waiting-view" class="view">
     <div class="card">
       <div class="waiting-hero">
-        <div class="emoji">&#9203;</div>
-        <h2>Je stem is uitgebracht!</h2>
-        <p class="subtitle" style="margin-bottom:0">Wachten op de anderen<span class="dots"><span>.</span><span>.</span><span>.</span></span></p>
+        <div class="emoji" id="waiting-emoji">&#9203;</div>
+        <h2 id="waiting-title">Je stem is uitgebracht!</h2>
+        <p class="subtitle" style="margin-bottom:0" id="waiting-subtitle">Wachten op de anderen<span class="dots"><span>.</span><span>.</span><span>.</span></span></p>
         <div class="my-vote-pill" id="my-vote-pill" style="display:none"></div>
       </div>
 
@@ -1637,6 +1643,19 @@
       <p class="hint">Resultaten zijn verborgen totdat iedereen heeft gestemd. Deze pagina ververst automatisch.</p>
       <p class="hint" style="margin-top:0.5rem">Wil je deze ronde leiden? <button class="link-btn" data-take-organizer>Word de organisator &rarr;</button></p>
       <p class="hint" style="margin-top:0.5rem" id="edit-vote-row"><button class="link-btn" id="edit-vote-btn">Stem of selectie wijzigen &rarr;</button></p>
+    </div>
+  </div>
+
+  <!-- ── REVEAL PROMPT VIEW (organizer only, before they unveil result) ── -->
+  <div id="reveal-prompt-view" class="view">
+    <div class="card">
+      <div class="waiting-hero">
+        <div class="emoji">🎉</div>
+        <h2>Iedereen heeft gestemd!</h2>
+        <p class="subtitle" style="margin-bottom:0">Klaar om het resultaat te onthullen?</p>
+      </div>
+      <div id="reveal-error" class="alert alert-error"></div>
+      <button class="btn btn-gold" id="reveal-btn" style="width:100%">Onthul het resultaat</button>
     </div>
   </div>
 
@@ -1935,6 +1954,20 @@
 
     if (state.allVoted) {
       editingVote = false;
+
+      if (!state.revealed) {
+        if (amOrganizer) {
+          showView('reveal-prompt-view');
+          hideError('reveal-error');
+          stopPolling();
+        } else {
+          showView('waiting-view');
+          renderWaiting(state);
+          startPolling();
+        }
+        return;
+      }
+
       const counts = state.voteCounts || {};
       const maxVotes = Math.max(...Object.values(counts), 0);
       const isTie = state.books.filter(b => (counts[b.title] || 0) === maxVotes).length > 1;
@@ -2218,6 +2251,21 @@
     document.getElementById('vote-cancel-btn').style.display = isEditing ? 'inline-flex' : 'none';
     document.getElementById('report-read-btn').style.display = isEditing ? 'none' : 'inline-flex';
 
+    const notice = document.getElementById('vote-closed-notice');
+    const voteBtn = document.getElementById('vote-btn');
+    if (!state.votingOpen) {
+      const md = state.meetingDate;
+      notice.textContent = md
+        ? `Stemmen kan op de dag van de meeting (${md.slice(8,10)}/${md.slice(5,7)}/${md.slice(0,4)}). Je kan wel al aanduiden welke boeken je al gelezen hebt.`
+        : 'Stemmen opent op de dag van de meeting. De organisator moet eerst een datum prikken.';
+      notice.style.display = 'block';
+      voteBtn.style.display = 'none';
+      document.getElementById('vote-cancel-btn').style.display = 'none';
+    } else {
+      notice.style.display = 'none';
+      voteBtn.style.display = '';
+    }
+
     // Pre-render books for step 2
     const myReadSet = new Set(state.myAlreadyRead || []);
     const grid = document.getElementById('books-grid');
@@ -2331,6 +2379,15 @@
   // ── Waiting view ───────────────────────────────────────────────────────────
 
   function renderWaiting(state) {
+    const awaitingReveal = state.allVoted && !state.revealed;
+    document.getElementById('waiting-emoji').textContent = awaitingReveal ? '🎉' : '⏳';
+    document.getElementById('waiting-title').textContent = awaitingReveal
+      ? 'Iedereen heeft gestemd!'
+      : 'Je stem is uitgebracht!';
+    document.getElementById('waiting-subtitle').innerHTML = awaitingReveal
+      ? 'Wachten op de organisator<span class="dots"><span>.</span><span>.</span><span>.</span></span>'
+      : 'Wachten op de anderen<span class="dots"><span>.</span><span>.</span><span>.</span></span>';
+
     document.getElementById('waiting-count').textContent =
       `${state.voteCount} / ${state.expectedVoters}`;
 
@@ -2348,13 +2405,25 @@
       pill.style.display = 'none';
     }
 
-    document.getElementById('edit-vote-row').style.display = state.allVoted ? 'none' : '';
+    document.getElementById('edit-vote-row').style.display = (state.allVoted || !state.votingOpen) ? 'none' : '';
   }
 
+  document.getElementById('reveal-btn').addEventListener('click', async () => {
+    hideError('reveal-error');
+    const res = await fetch('/api/reveal', { method: 'POST' });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      showError('reveal-error', data.error || 'Onthullen mislukt.');
+      return;
+    }
+    fetchState();
+  });
+
   document.getElementById('edit-vote-btn').addEventListener('click', () => {
-    if (window._lastState?.allVoted) return;
+    const s = window._lastState;
+    if (!s || s.allVoted || !s.votingOpen) return;
     editingVote = true;
-    if (window._lastState) render(window._lastState);
+    render(s);
   });
 
 
@@ -2853,6 +2922,8 @@
     const hasData = meeting?.datetime || meeting?.place;
     const panelOpen = document.getElementById('meeting-panel').style.display !== 'none';
 
+    document.getElementById('meeting-date-hidden').min = new Date().toLocaleDateString('en-CA');
+
     document.getElementById('meeting-display').style.display = hasData ? '' : 'none';
     if (hasData) {
       if (meeting.datetime) {
@@ -2894,6 +2965,12 @@
       return;
     }
 
+    if (date && date < new Date().toLocaleDateString('en-CA')) {
+      errEl.textContent = 'De meetingdatum kan niet in het verleden liggen.';
+      errEl.style.display = 'block';
+      return;
+    }
+
     const res = await fetch('/api/meeting', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2901,7 +2978,11 @@
     });
 
     if (res.ok) fetchState();
-    else { errEl.textContent = 'Opslaan mislukt.'; errEl.style.display = 'block'; }
+    else {
+      const data = await res.json().catch(() => ({}));
+      errEl.textContent = data.error || 'Opslaan mislukt.';
+      errEl.style.display = 'block';
+    }
   });
 
   // ── Nav / hamburger ────────────────────────────────────────────────────────
