@@ -116,15 +116,6 @@ function todayLocal() {
   return new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in server-local TZ
 }
 
-function meetingDateOf(s) {
-  return s.meeting?.datetime?.slice(0, 10) || null;
-}
-
-function isVotingOpen(s) {
-  const md = meetingDateOf(s);
-  return !!md && md === todayLocal();
-}
-
 // ── Book lookup ────────────────────────────────────────────────────────────
 
 function fetchJson(url) {
@@ -228,7 +219,7 @@ app.get('/api/state', (req, res) => {
   const myVote = me && state.votes[me] ? state.votes[me] : null;
   const myAlreadyRead = me && state.alreadyRead[me] ? state.alreadyRead[me] : [];
 
-  const response = { phase: state.phase, books: state.books, expectedVoters: state.expectedVoters, voteCount, voterNames, allVoted, alreadyReadCounts, alreadyReadNames, organizer: state.organizer || null, wishlist: state.wishlist || [], history: state.history || [], members, tieResolved: state.tieResolved, chosenBook: state.chosenBook, concludedAt: state.concludedAt, meeting: state.meeting || null, myVote, myAlreadyRead, votingOpen: isVotingOpen(state), meetingDate: meetingDateOf(state), revealed: !!state.revealed };
+  const response = { phase: state.phase, books: state.books, expectedVoters: state.expectedVoters, voteCount, voterNames, allVoted, alreadyReadCounts, alreadyReadNames, organizer: state.organizer || null, wishlist: state.wishlist || [], history: state.history || [], members, tieResolved: state.tieResolved, chosenBook: state.chosenBook, concludedAt: state.concludedAt, meeting: state.meeting || null, myVote, myAlreadyRead, revealed: !!state.revealed };
 
   if (allVoted && state.revealed) {
     const voteCounts = {};
@@ -280,10 +271,6 @@ app.post('/api/vote', async (req, res) => {
   const normalizedName = name.trim();
   const wasAllVoted = state.expectedVoters > 0 && Object.keys(state.votes).length >= state.expectedVoters;
   if (wasAllVoted) return res.status(400).json({ error: 'Voting is closed — everyone has voted.' });
-  if (!isVotingOpen(state)) {
-    const md = meetingDateOf(state);
-    return res.status(400).json({ error: md ? 'Stemmen kan enkel op de dag van de meeting.' : 'De organisator moet eerst een meetingdatum prikken.' });
-  }
   if (!state.books.some(b => b.title === bookTitle)) return res.status(400).json({ error: 'Invalid book selection.' });
 
   state.votes[normalizedName] = bookTitle;

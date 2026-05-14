@@ -1592,7 +1592,6 @@
 
         <div id="books-grid" class="books-grid"></div>
 
-        <div id="vote-closed-notice" class="alert alert-info"></div>
         <button class="btn btn-gold" id="vote-btn">Stem uitbrengen</button>
         <button class="btn btn-secondary" id="vote-cancel-btn" style="margin-top:0.5rem;display:none">Annuleer</button>
 
@@ -1778,6 +1777,7 @@
       <div class="meeting-display">
         <div class="meeting-display-datetime" id="meeting-display-datetime"></div>
         <div class="meeting-display-place" id="meeting-display-place"></div>
+        <button class="btn btn-secondary" id="meeting-ics-btn" style="margin-top:0.75rem;display:none">📅 Toevoegen aan agenda</button>
       </div>
     </div>
     <div class="form-group">
@@ -2251,21 +2251,6 @@
     document.getElementById('vote-cancel-btn').style.display = isEditing ? 'inline-flex' : 'none';
     document.getElementById('report-read-btn').style.display = isEditing ? 'none' : 'inline-flex';
 
-    const notice = document.getElementById('vote-closed-notice');
-    const voteBtn = document.getElementById('vote-btn');
-    if (!state.votingOpen) {
-      const md = state.meetingDate;
-      notice.textContent = md
-        ? `Stemmen kan op de dag van de meeting (${md.slice(8,10)}/${md.slice(5,7)}/${md.slice(0,4)}). Je kan wel al aanduiden welke boeken je al gelezen hebt.`
-        : 'Stemmen opent op de dag van de meeting. De organisator moet eerst een datum prikken.';
-      notice.style.display = 'block';
-      voteBtn.style.display = 'none';
-      document.getElementById('vote-cancel-btn').style.display = 'none';
-    } else {
-      notice.style.display = 'none';
-      voteBtn.style.display = '';
-    }
-
     // Pre-render books for step 2
     const myReadSet = new Set(state.myAlreadyRead || []);
     const grid = document.getElementById('books-grid');
@@ -2405,7 +2390,7 @@
       pill.style.display = 'none';
     }
 
-    document.getElementById('edit-vote-row').style.display = (state.allVoted || !state.votingOpen) ? 'none' : '';
+    document.getElementById('edit-vote-row').style.display = state.allVoted ? 'none' : '';
   }
 
   document.getElementById('reveal-btn').addEventListener('click', async () => {
@@ -2421,7 +2406,7 @@
 
   document.getElementById('edit-vote-btn').addEventListener('click', () => {
     const s = window._lastState;
-    if (!s || s.allVoted || !s.votingOpen) return;
+    if (!s || s.allVoted) return;
     editingVote = true;
     render(s);
   });
@@ -2935,6 +2920,7 @@
       }
       document.getElementById('meeting-display-place').textContent =
         meeting.place ? '📍 ' + meeting.place : '';
+      document.getElementById('meeting-ics-btn').style.display = meeting.datetime ? '' : 'none';
     }
 
     if (panelOpen) return;
@@ -2983,6 +2969,48 @@
       errEl.textContent = data.error || 'Opslaan mislukt.';
       errEl.style.display = 'block';
     }
+  });
+
+  document.getElementById('meeting-ics-btn').addEventListener('click', () => {
+    const meeting = window._lastState?.meeting;
+    if (!meeting?.datetime) return;
+
+    const [datePart, timePart = '00:00'] = meeting.datetime.split('T');
+    const [y, m, d] = datePart.split('-');
+    const [hh, mm] = timePart.split(':');
+    const start = `${y}${m}${d}T${hh}${mm}00`;
+    const endDate = new Date(Number(y), Number(m) - 1, Number(d), Number(hh), Number(mm) + 120);
+    const pad = n => String(n).padStart(2, '0');
+    const end = `${endDate.getFullYear()}${pad(endDate.getMonth() + 1)}${pad(endDate.getDate())}T${pad(endDate.getHours())}${pad(endDate.getMinutes())}00`;
+
+    const dtstamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const uid = `bookclub-${start}@bookclub`;
+    const escape = s => String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+
+    const lines = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Bookclub//NL',
+      'BEGIN:VEVENT',
+      `UID:${uid}`,
+      `DTSTAMP:${dtstamp}`,
+      `DTSTART:${start}`,
+      `DTEND:${end}`,
+      'SUMMARY:Bookclub',
+      meeting.place ? `LOCATION:${escape(meeting.place)}` : null,
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].filter(Boolean);
+
+    const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bookclub.ics';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   });
 
   // ── Nav / hamburger ────────────────────────────────────────────────────────
