@@ -1449,6 +1449,7 @@
   <button class="nav-item" data-nav="history">Geschiedenis</button>
   <button class="nav-item" data-nav="organizer">Organisator kiezen</button>
   <button class="nav-item" data-nav="meeting">Volgende meeting</button>
+  <button class="nav-item" data-nav="logout">Uitloggen</button>
 </nav>
 
 <div id="current-book-banner" style="display:none">
@@ -1852,6 +1853,17 @@
 </div>
 
 <script>
+  // Redirect to /login on session expiry
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = async (...args) => {
+    const res = await originalFetch(...args);
+    if (res.status === 401) {
+      window.location.href = '/login';
+      return new Promise(() => {}); // never resolves — stop callers
+    }
+    return res;
+  };
+
   let pollTimer = null;
   let currentPage = 'home';
   let selectedBook = null;
@@ -3054,8 +3066,17 @@
   navMenu.addEventListener('click', e => {
     const item = e.target.closest('.nav-item');
     if (!item) return;
+    if (item.dataset.nav === 'logout') {
+      logout();
+      return;
+    }
     switchPage(item.dataset.nav);
   });
+
+  async function logout() {
+    try { await originalFetch('/logout', { method: 'POST' }); } catch {}
+    window.location.href = '/login';
+  }
 
   // ── Organizer wheel ────────────────────────────────────────────────────────
 

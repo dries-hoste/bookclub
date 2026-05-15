@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const fs = require('fs');
 const https = require('https');
-const basicAuth = require('express-basic-auth');
+const crypto = require('crypto');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,12 +26,141 @@ const authUsers = members.length
   ? Object.fromEntries(members.map(m => [m, password || 'changeme']))
   : { bookclub: password || 'changeme' };
 
-app.use(basicAuth({
-  users: authUsers,
-  challenge: true,
-  realm: 'Book Club',
-}));
+// ── Session cookies ────────────────────────────────────────────────────────
 
+const SESSION_COOKIE = 'bc_session';
+const SESSION_TTL_MS = 60 * 24 * 60 * 60 * 1000; // 60 days
+
+const sessionSecret = process.env.BOOKCLUB_SESSION_SECRET
+  || crypto.createHash('sha256').update('bc-session:' + (password || 'changeme')).digest('hex');
+if (!process.env.BOOKCLUB_SESSION_SECRET) {
+  console.warn('⚠️  BOOKCLUB_SESSION_SECRET not set — derived from BOOKCLUB_PASSWORD.');
+  console.warn('   Set a stable random value so sessions survive password changes.\n');
+}
+
+function sign(value) {
+  return crypto.createHmac('sha256', sessionSecret).update(value).digest('base64url');
+}
+
+function createSessionToken(user) {
+  const expires = Date.now() + SESSION_TTL_MS;
+  const payload = `${encodeURIComponent(user)}.${expires}`;
+  return `${payload}.${sign(payload)}`;
+}
+
+function verifySessionToken(token) {
+  if (!token || typeof token !== 'string') return null;
+  const lastDot = token.lastIndexOf('.');
+  if (lastDot < 0) return null;
+  const payload = token.slice(0, lastDot);
+  const sig = token.slice(lastDot + 1);
+  const expected = sign(payload);
+  const sigBuf = Buffer.from(sig);
+  const expBuf = Buffer.from(expected);
+  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) return null;
+  const sep = payload.indexOf('.');
+  if (sep < 0) return null;
+  const expires = parseInt(payload.slice(sep + 1), 10);
+  if (!expires || expires < Date.now()) return null;
+  let user;
+  try { user = decodeURIComponent(payload.slice(0, sep)); } catch { return null; }
+  if (!authUsers[user]) return null;
+  return { user };
+}
+
+function parseCookies(header) {
+  const out = {};
+  if (!header) return out;
+  header.split(';').forEach(p => {
+    const idx = p.indexOf('=');
+    if (idx < 0) return;
+    const k = p.slice(0, idx).trim();
+    const v = p.slice(idx + 1).trim();
+    try { out[k] = decodeURIComponent(v); } catch { out[k] = v; }
+  });
+  return out;
+}
+
+function setSessionCookie(res, user) {
+  res.cookie(SESSION_COOKIE, createSessionToken(user), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: SESSION_TTL_MS,
+    path: '/',
+  });
+}
+
+function requireAuth(req, res, next) {
+  const cookies = parseCookies(req.headers.cookie);
+  const session = verifySessionToken(cookies[SESSION_COOKIE]);
+  if (session) {
+    req.auth = { user: session.user };
+    return next();
+  }
+  if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Not authenticated' });
+  return res.redirect('/login');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+const loginForm = (errorMsg) => `<!doctype html>
+<html lang="en"><head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Inloggen — Read Between The Wines</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #faf7f0; color: #2c1810; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+  .card { background: #fff; border: 1px solid #ddd3c0; border-radius: 12px; padding: 2rem 2rem 1.75rem; box-shadow: 0 4px 20px rgba(44,24,16,0.11); width: 100%; max-width: 360px; }
+  h1 { font-family: 'Playfair Display', Georgia, serif; font-size: 1.35rem; margin-bottom: 0.35rem; font-weight: 700; }
+  .subtitle { color: #7a6655; font-size: 0.9rem; margin-bottom: 1.5rem; }
+  label { display: block; font-size: 0.85rem; color: #5c3d2e; margin-bottom: 0.35rem; }
+  input { width: 100%; padding: 0.65rem 0.75rem; border: 1px solid #ddd3c0; border-radius: 6px; font-family: inherit; font-size: 0.95rem; margin-bottom: 1rem; background: #faf7f0; color: #2c1810; }
+  input:focus { outline: none; border-color: #c9973a; }
+  button { width: 100%; padding: 0.75rem; background: #2c1810; color: #f0e0b0; border: none; border-radius: 6px; font-family: inherit; font-size: 0.95rem; font-weight: 500; cursor: pointer; letter-spacing: 0.02em; margin-top: 0.25rem; }
+  button:hover { background: #3d2215; }
+  .error { background: #fde8e8; border: 1px solid #f5b5b5; color: #8a2020; padding: 0.6rem 0.75rem; border-radius: 6px; font-size: 0.85rem; margin-bottom: 1rem; }
+</style></head>
+<body>
+  <form class="card" method="POST" action="/login" autocomplete="on">
+    <h1>📚 Read Between The Wines</h1>
+    <div class="subtitle">Log in om verder te gaan</div>
+    ${errorMsg ? `<div class="error">${escapeHtml(errorMsg)}</div>` : ''}
+    <label for="username">Naam</label>
+    <input id="username" name="username" type="text" autocomplete="username" autofocus required />
+    <label for="password">Wachtwoord</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required />
+    <button type="submit">Inloggen</button>
+  </form>
+</body></html>`;
+
+app.get('/login', (req, res) => {
+  const cookies = parseCookies(req.headers.cookie);
+  if (verifySessionToken(cookies[SESSION_COOKIE])) return res.redirect('/');
+  res.type('html').send(loginForm(req.query.error ? 'Onjuiste naam of wachtwoord.' : ''));
+});
+
+app.post('/login', express.urlencoded({ extended: false }), (req, res) => {
+  const username = (req.body.username || '').trim();
+  const pwd = req.body.password || '';
+  const expected = authUsers[username];
+  if (!expected || expected !== pwd) return res.redirect('/login?error=1');
+  setSessionCookie(res, username);
+  res.redirect('/');
+});
+
+app.post('/logout', (req, res) => {
+  res.clearCookie(SESSION_COOKIE, { path: '/' });
+  res.json({ success: true });
+});
+
+// Everything below requires a valid session
+app.use(requireAuth);
 app.use(express.json());
 app.use(express.static('public'));
 
