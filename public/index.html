@@ -390,6 +390,27 @@
     .lookup-found-meta { color: var(--gray); font-size: 0.78rem; margin-top: 0.1rem; }
     .lookup-not-found { color: var(--gray); font-style: italic; }
 
+    /* Selectable result list — user picks the right book */
+    .lookup-preview.choices { flex-direction: column; align-items: stretch; gap: 0.4rem; }
+    .lookup-choices-hint { font-size: 0.78rem; color: var(--gray); }
+    .lookup-choice {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.45rem 0.55rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--white);
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+    }
+    .lookup-choice:hover { border-color: var(--gold); background: var(--muted-gold); }
+    .lookup-choice.selected {
+      border-color: var(--gold);
+      background: var(--muted-gold);
+      box-shadow: inset 0 0 0 1px var(--gold);
+    }
+
     .book-card-cover {
       width: 64px;
       height: 90px;
@@ -2044,21 +2065,66 @@
 
   // ── Book lookup ────────────────────────────────────────────────────────────
 
+  // Candidates returned by the last lookup, keyed by context ('1'..'3'|'wl'|'hist').
+  const lookupResults = {};
+
+  // Resolve the title/author inputs and meta target for a lookup context.
+  function lookupEls(ctx) {
+    const isWl = ctx === 'wl', isHist = ctx === 'hist';
+    return {
+      titleEl: document.getElementById(isWl ? 'wl-title' : isHist ? 'hist-title' : `b${ctx}-title`),
+      authorEl: document.getElementById(isWl ? 'wl-author' : isHist ? 'hist-author' : `b${ctx}-author`),
+    };
+  }
+
+  function setLookupMeta(ctx, meta) {
+    if (ctx === 'wl') wishlistMeta = meta;
+    else if (ctx === 'hist') histMeta = meta;
+    else bookMeta[ctx] = meta;
+  }
+
+  // Apply a chosen book: fill the form fields and stash its meta, so the
+  // saved item matches the selected book rather than the partial input.
+  function applyLookupChoice(ctx, book) {
+    const { titleEl, authorEl } = lookupEls(ctx);
+    titleEl.value = book.title;
+    if (book.author) authorEl.value = book.author;
+    setLookupMeta(ctx, { pageCount: book.pageCount || null, coverUrl: book.coverUrl || null });
+  }
+
+  function renderLookupChoices(ctx, preview, results) {
+    preview.className = 'lookup-preview choices';
+    preview.innerHTML =
+      `<div class="lookup-choices-hint">${results.length > 1 ? 'Kies het juiste boek:' : 'Gevonden boek:'}</div>` +
+      results.map((r, n) => {
+        const pages = r.pageCount ? `${r.pageCount} pagina's` : 'aantal pagina\'s onbekend';
+        const cover = r.coverUrl
+          ? `<img class="lookup-cover" src="${esc(r.coverUrl)}" alt="" />`
+          : `<span style="font-size:1.5rem;flex-shrink:0">📖</span>`;
+        return `<div class="lookup-choice${n === 0 ? ' selected' : ''}" data-pick="${ctx}" data-idx="${n}">
+          ${cover}
+          <div class="lookup-info">
+            <div class="lookup-found-title">${esc(r.title)}</div>
+            <div class="lookup-found-meta">${r.author ? esc(r.author) + ' · ' : ''}${pages}</div>
+          </div>
+        </div>`;
+      }).join('');
+    preview.style.display = 'flex';
+  }
+
   document.addEventListener('click', async e => {
     const btn = e.target.closest('[data-lookup]');
     if (!btn) return;
 
     const i = btn.dataset.lookup;
-    const isWl = i === 'wl';
-    const isHist = i === 'hist';
-    const titleEl = document.getElementById(isWl ? 'wl-title' : isHist ? 'hist-title' : `b${i}-title`);
-    const authorEl = document.getElementById(isWl ? 'wl-author' : isHist ? 'hist-author' : `b${i}-author`);
+    const { titleEl, authorEl } = lookupEls(i);
     const title = titleEl.value.trim();
     const author = authorEl.value.trim();
     if (!title) return;
 
     btn.disabled = true;
     btn.textContent = '…';
+    const isWl = i === 'wl', isHist = i === 'hist';
     const preview = document.getElementById(isWl ? 'wl-preview' : isHist ? 'hist-preview' : `b${i}-preview`);
     preview.style.display = 'none';
 
@@ -2078,34 +2144,41 @@
       }
       if (!data) throw lastErr;
 
-      if (!data.found) {
+      const results = data.found ? (data.results || []) : [];
+      if (!results.length) {
+        preview.className = 'lookup-preview';
         preview.innerHTML = `<span class="lookup-not-found">Geen resultaten gevonden voor "${esc(title)}".</span>`;
-        if (isWl) wishlistMeta = {}; else if (isHist) histMeta = {}; else bookMeta[i] = {};
+        preview.style.display = 'flex';
+        lookupResults[i] = [];
+        setLookupMeta(i, {});
       } else {
-        if (!author && data.author) authorEl.value = data.author;
-        const pages = data.pageCount ? `${data.pageCount} pagina's` : 'aantal pagina\'s onbekend';
-        const coverHtml = data.coverUrl
-          ? `<img class="lookup-cover" src="${esc(data.coverUrl)}" alt="" />`
-          : `<span style="font-size:1.5rem;flex-shrink:0">📖</span>`;
-        preview.innerHTML = `
-          ${coverHtml}
-          <div class="lookup-info">
-            <div class="lookup-found-title">${esc(data.title)}</div>
-            <div class="lookup-found-meta">${data.author ? esc(data.author) + ' · ' : ''}${pages}</div>
-          </div>`;
-        if (isWl) wishlistMeta = { pageCount: data.pageCount, coverUrl: data.coverUrl };
-        else if (isHist) histMeta = { pageCount: data.pageCount, coverUrl: data.coverUrl };
-        else bookMeta[i] = { pageCount: data.pageCount, coverUrl: data.coverUrl };
+        lookupResults[i] = results;
+        renderLookupChoices(i, preview, results);
+        // Pre-select the top result; the user can click another to change it.
+        applyLookupChoice(i, results[0]);
       }
-      preview.style.display = 'flex';
     } catch {
+      preview.className = 'lookup-preview';
       preview.innerHTML = `<span class="lookup-not-found">Opzoeken mislukt — controleer je verbinding.</span>`;
       preview.style.display = 'flex';
-      if (isWl) wishlistMeta = {}; else if (isHist) histMeta = {}; else bookMeta[i] = {};
+      lookupResults[i] = [];
+      setLookupMeta(i, {});
     }
 
     btn.disabled = false;
     btn.textContent = 'Opzoeken';
+  });
+
+  // Pick one of the offered lookup results.
+  document.addEventListener('click', e => {
+    const card = e.target.closest('[data-pick]');
+    if (!card) return;
+    const ctx = card.dataset.pick;
+    const book = lookupResults[ctx]?.[parseInt(card.dataset.idx, 10)];
+    if (!book) return;
+    applyLookupChoice(ctx, book);
+    card.parentElement.querySelectorAll('.lookup-choice')
+      .forEach(c => c.classList.toggle('selected', c === card));
   });
 
   // Enter on a title input triggers lookup for that book
@@ -2193,6 +2266,7 @@
         const coverHtml = book.coverUrl
           ? `<img class="lookup-cover" src="${esc(book.coverUrl)}" alt="" />`
           : `<span style="font-size:1.5rem;flex-shrink:0">📖</span>`;
+        preview.className = 'lookup-preview';
         preview.innerHTML = `${coverHtml}<div class="lookup-info">
           <div class="lookup-found-title">${esc(book.title)}</div>
           <div class="lookup-found-meta">${book.author ? esc(book.author) + ' · ' : ''}${pages}</div>

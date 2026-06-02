@@ -296,29 +296,78 @@ app.get('/api/lookup', async (req, res) => {
     const parts = [`intitle:${title}`, author ? `inauthor:${author}` : ''].filter(Boolean);
     const q = encodeURIComponent(parts.join(' '));
     const apiKey = process.env.GOOGLE_BOOKS_API_KEY ? `&key=${process.env.GOOGLE_BOOKS_API_KEY}` : '';
-    const data = await fetchJson(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=5&printType=books${apiKey}`);
+    const data = await fetchJson(`https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=10&printType=books${apiKey}`);
 
     if (data.items?.length) {
-      const item = data.items.find(i => i.volumeInfo?.pageCount) || data.items[0];
-      const info = item.volumeInfo;
-      let description = info.description || null;
-      if (!description) {
-        try { description = (await fetchOpenLibrary(info.title, info.authors?.[0]))?.description || null; } catch {}
-      }
-      return res.json({
-        found: true,
-        title: info.title,
-        author: info.authors?.[0] || '',
-        pageCount: info.pageCount || null,
-        coverUrl: info.imageLinks?.thumbnail?.replace('http:', 'https:') || null,
-        description,
+      const norm = s => (s || '').toLowerCase().trim();
+      const wantTitle = norm(title);
+      const wantAuthor = norm(author);
+
+      // Relevance score for title/author match (used as a tiebreaker).
+      const score = it => {
+        const vi = it.volumeInfo || {};
+        const t = norm(vi.title);
+        const a = norm(vi.authors?.[0]);
+        let s = 0;
+        if (t === wantTitle) s += 100;
+        else if (t.startsWith(wantTitle)) s += 50;
+        else if (t.includes(wantTitle)) s += 25;
+        if (wantAuthor && a.includes(wantAuthor)) s += 20;
+        return s;
+      };
+      // Exact title match (case/space-insensitive). Highest priority: if the
+      // user's title matches a result exactly, surface it first regardless of
+      // pageCount/language. The loose `intitle:` query still finds it.
+      const exactTitle = it => (norm(it.volumeInfo?.title) === wantTitle ? 1 : 0);
+      const hasPages = it => (it.volumeInfo?.pageCount ? 1 : 0);
+
+      // Prefer English/Dutch editions (readable for the bookclub) over other
+      // languages, e.g. transliterated foreign editions that happen to be an
+      // exact title match.
+      const preferredLang = it => {
+        const lang = (it.volumeInfo?.language || '').toLowerCase();
+        return (lang === 'en' || lang === 'nl') ? 1 : 0;
+      };
+
+      // Rank by: exact title match; then edition has a pageCount; then an
+      // English/Dutch edition; then partial title/author relevance; then
+      // stable volume id. Google's ordering isn't stable across calls, so we
+      // return the top few and let the user pick.
+      const ranked = data.items
+        .slice()
+        .sort((x, y) =>
+          exactTitle(y) - exactTitle(x) ||
+          hasPages(y) - hasPages(x) ||
+          preferredLang(y) - preferredLang(x) ||
+          score(y) - score(x) ||
+          (x.id < y.id ? -1 : 1)
+        );
+
+      const results = ranked.slice(0, 5).map(it => {
+        const vi = it.volumeInfo || {};
+        return {
+          title: vi.title,
+          author: vi.authors?.[0] || '',
+          pageCount: vi.pageCount || null,
+          coverUrl: vi.imageLinks?.thumbnail?.replace('http:', 'https:') || null,
+          description: vi.description || null,
+        };
       });
+
+      // Top-level fields describe the best match (used by the book-detail
+      // modal); `results` carries the choices for the lookup picker.
+      const best = results[0];
+      let description = best.description;
+      if (!description) {
+        try { description = (await fetchOpenLibrary(best.title, best.author))?.description || null; } catch {}
+      }
+      return res.json({ found: true, ...best, description, results });
     }
 
     // Google Books found nothing — fall back to Open Library entirely
     const ol = await fetchOpenLibrary(title, author);
     if (!ol) return res.json({ found: false });
-    return res.json({ found: true, ...ol });
+    return res.json({ found: true, ...ol, results: [ol] });
   } catch (e) {
     console.error('Lookup error:', e.message);
     res.status(500).json({ error: 'Lookup failed' });
