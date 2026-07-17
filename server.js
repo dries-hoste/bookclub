@@ -459,25 +459,6 @@ app.post('/api/vote', async (req, res) => {
   }
 
   const allVoted = Object.keys(state.votes).length >= state.expectedVoters;
-  if (allVoted) {
-    const voteCounts = {};
-    state.books.forEach(b => { voteCounts[b.title] = 0; });
-    Object.values(state.votes).forEach(t => { voteCounts[t] = (voteCounts[t] || 0) + 1; });
-    const maxVotes = Math.max(...Object.values(voteCounts));
-    const winners = state.books.filter(b => voteCounts[b.title] === maxVotes);
-    winners.forEach(winner => {
-      if (!state.wishlist.some(w => w.title === winner.title)) {
-        state.wishlist.push({ title: winner.title, author: winner.author, pageCount: winner.pageCount, coverUrl: winner.coverUrl, addedBy: null, fromVote: true });
-      }
-    });
-    state.concludedAt = new Date().toISOString().split('T')[0];
-    if (winners.length === 1) {
-      if (!state.history) state.history = [];
-      const winner = winners[0];
-      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-      state.history.push({ id, date: state.concludedAt, organizer: state.organizer || '', book: { title: winner.title, author: winner.author, pageCount: winner.pageCount, coverUrl: winner.coverUrl } });
-    }
-  }
 
   await saveState();
   res.json({ success: true, allVoted });
@@ -507,6 +488,24 @@ app.post('/api/reveal', async (req, res) => {
   if (!(state.expectedVoters > 0 && voteCount >= state.expectedVoters)) {
     return res.status(400).json({ error: 'Nog niet iedereen heeft gestemd.' });
   }
+  const voteCounts = {};
+  state.books.forEach(b => { voteCounts[b.title] = 0; });
+  Object.values(state.votes).forEach(t => { voteCounts[t] = (voteCounts[t] || 0) + 1; });
+  const maxVotes = Math.max(...Object.values(voteCounts));
+  const winners = state.books.filter(b => voteCounts[b.title] === maxVotes);
+  winners.forEach(winner => {
+    if (!state.wishlist.some(w => w.title === winner.title)) {
+      state.wishlist.push({ title: winner.title, author: winner.author, pageCount: winner.pageCount, coverUrl: winner.coverUrl, addedBy: null, fromVote: true });
+    }
+  });
+  state.concludedAt = new Date().toISOString().split('T')[0];
+  if (winners.length === 1) {
+    if (!state.history) state.history = [];
+    const winner = winners[0];
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    state.history.push({ id, date: state.concludedAt, organizer: state.organizer || '', book: { title: winner.title, author: winner.author, pageCount: winner.pageCount, coverUrl: winner.coverUrl } });
+  }
+
   state.revealed = true;
   await saveState();
   res.json({ success: true });
